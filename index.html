@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Israel Lotto Checker</title>
+  <title>🎱 Lotto Checker</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #080d1a; font-family: 'Segoe UI', sans-serif; color: #e8eeff; }
+    body { background: #080d1a; font-family: 'Segoe UI', sans-serif; color: #e8eeff; direction: rtl; }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
     input[type=number] { -moz-appearance: textfield; }
@@ -21,9 +21,10 @@
 
     .num-input { width: 40px; height: 36px; border-radius: 8px; text-align: center; font-size: 13px; font-weight: 700; outline: none; font-family: monospace; border: 1px solid rgba(100,140,255,0.3); background: rgba(100,140,255,0.08); color: #c3d4ff; }
     .strong-input { width: 40px; height: 36px; border-radius: 8px; text-align: center; font-size: 13px; font-weight: 700; outline: none; font-family: monospace; border: 1px solid rgba(212,175,55,0.4); background: rgba(212,175,55,0.08); color: #d4af37; }
-    .draw-input { width: 110px; height: 42px; border-radius: 9px; border: 1px solid rgba(100,140,255,0.3); background: rgba(100,140,255,0.08); color: #c3d4ff; text-align: center; font-size: 15px; font-weight: 700; outline: none; font-family: monospace; }
+    
+    .paste-area { width: 100%; height: 120px; border-radius: 9px; border: 1px solid rgba(100,140,255,0.3); background: rgba(100,140,255,0.05); color: #c3d4ff; padding: 12px; font-size: 13px; outline: none; font-family: inherit; resize: none; text-align: right; }
 
-    .check-btn { height: 42px; padding: 0 24px; border-radius: 9px; border: none; font-weight: 700; font-size: 13px; font-family: inherit; transition: all 0.2s; }
+    .check-btn { height: 42px; padding: 0 24px; border-radius: 9px; border: none; font-weight: 700; font-size: 13px; font-family: inherit; transition: all 0.2s; width: 100%; margin-top: 12px; }
     .check-btn:enabled { cursor: pointer; background: linear-gradient(135deg, #4a7fff, #2a50cc); color: white; box-shadow: 0 4px 16px rgba(74,127,255,0.3); }
     .check-btn:disabled { cursor: not-allowed; background: rgba(100,140,255,0.1); color: #4a5a7a; }
 
@@ -35,18 +36,18 @@
 
     .ticket-row { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; }
     .ticket-label { font-size: 10px; color: #7a8ab0; margin-bottom: 7px; font-weight: 600; letter-spacing: 1px; }
-    .ticket-inputs { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .ticket-inputs { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; direction: ltr; justify-content: flex-end; }
     .divider { width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 2px; }
 
-    .draw-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 16px 20px; margin-bottom: 12px; }
+    .draw-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 16px 20px; margin-bottom: 12px; text-align: right; }
     .draw-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .draw-num { color: #7a8ab0; font-size: 11px; font-weight: 600; letter-spacing: 1px; }
     .match-badge { background: rgba(212,175,55,0.15); color: #d4af37; font-size: 11px; padding: 2px 10px; border-radius: 20px; font-weight: 700; border: 1px solid rgba(212,175,55,0.3); }
     .match-ticket { margin-top: 8px; background: rgba(100,140,255,0.05); border-radius: 8px; padding: 8px 12px; border: 1px solid rgba(100,140,255,0.15); }
 
-    .info-box { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(100,140,255,0.05); border: 1px solid rgba(100,140,255,0.1); font-size: 11px; color: #4a5a7a; }
-    .warn-box { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(212,175,55,0.05); border: 1px solid rgba(212,175,55,0.12); font-size: 11px; color: #7a6030; }
-    .error-box { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(255,80,80,0.07); border: 1px solid rgba(255,80,80,0.2); color: #ff8080; font-size: 13px; }
+    .info-box { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(100,140,255,0.05); border: 1px solid rgba(100,140,255,0.1); font-size: 11px; color: #7a8ab0; text-align: right; }
+    .warn-box { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(212,175,55,0.05); border: 1px solid rgba(212,175,55,0.12); font-size: 11px; color: #a68042; text-align: right; }
+    .error-box { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(255,80,80,0.07); border: 1px solid rgba(255,80,80,0.2); color: #ff8080; font-size: 13px; text-align: right; }
 
     .panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 22px; }
   </style>
@@ -56,8 +57,6 @@
 
   <script type="text/babel">
     const { useState, useEffect, useCallback } = React;
-
-    const ANTHROPIC_API_KEY = "YOUR_API_KEY_HERE"; // 🔑 Replace with your Anthropic API key
 
     function makeBlank() {
       return { numbers: ["","","","","",""], strong: "" };
@@ -85,7 +84,7 @@
       return (
         <div className="ticket-row">
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7}}>
-            <div className="ticket-label" style={{marginBottom:0}}>TICKET {index + 1}</div>
+            <div className="ticket-label" style={{marginBottom:0}}>טופס {index + 1}</div>
             {total > 1 && (
               <button onClick={onRemove} title="Remove ticket" style={{
                 background:"rgba(255,80,80,0.1)", border:"1px solid rgba(255,80,80,0.25)",
@@ -117,25 +116,25 @@
       return (
         <div className="draw-card">
           <div className="draw-header">
-            <span className="draw-num">DRAW #{draw.draw_number}</span>
+            <span className="draw-num">הגרלה מספר #{draw.draw_number}</span>
             {winners.length > 0 && (
-              <span className="match-badge">{winners.length} MATCH{winners.length > 1 ? "ES" : ""}</span>
+              <span className="match-badge">{winners.length} התאמות</span>
             )}
           </div>
-          <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:10}}>
+          <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:10, direction:"ltr", justifyContent:"flex-end"}}>
             {draw.numbers.map((n,i) => <Ball key={i} value={n} type="normal" />)}
             <Ball value={draw.strong} type="strong" />
           </div>
           {winners.length === 0
-            ? <div style={{color:"#4a5a7a", fontSize:12, fontStyle:"italic"}}>No matching tickets (2+ numbers).</div>
+            ? <div style={{color:"#4a5a7a", fontSize:12, fontStyle:"italic"}}>אין טפסים תואמים (נדרש לפחות 2 מספרים).</div>
             : winners.map(w => (
               <div key={w.index} className="match-ticket">
                 <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:6}}>
-                  <span style={{color:"#c3d4ff", fontSize:12, fontWeight:600}}>Ticket {w.index + 1}:</span>
-                  <span style={{color:"#a0b4e8", fontSize:12}}>{w.matched.length} numbers matched</span>
-                  {w.strongMatch && <span style={{color:"#d4af37", fontSize:12, fontWeight:700}}>+ Strong ★</span>}
+                  <span style={{color:"#c3d4ff", fontSize:12, fontWeight:600}}>טופס {w.index + 1}:</span>
+                  <span style={{color:"#a0b4e8", fontSize:12}}>נמצאו {w.matched.length} מספרים תואמים</span>
+                  {w.strongMatch && <span style={{color:"#d4af37", fontSize:12, fontWeight:700}}>+ מספר חזק ★</span>}
                 </div>
-                <div style={{display:"flex", gap:5, flexWrap:"wrap"}}>
+                <div style={{display:"flex", gap:5, flexWrap:"wrap", direction:"ltr", justifyContent:"flex-end"}}>
                   {w.matched.map((n,i) => <Ball key={i} value={n} type="normal" />)}
                   {w.strongMatch && <Ball value={draw.strong} type="strong" />}
                 </div>
@@ -148,14 +147,12 @@
 
     function App() {
       const [tickets, setTickets] = useState(() => [makeBlank()]);
-      const [drawRange, setDrawRange] = useState({ start: "", end: "" });
+      const [rawText, setRawText] = useState("");
       const [results, setResults] = useState([]);
-      const [loading, setLoading] = useState(false);
       const [error, setError] = useState("");
       const [tab, setTab] = useState("tickets");
       const [saveMsg, setSaveMsg] = useState("");
 
-      // Load from localStorage on mount
       useEffect(() => {
         try {
           const saved = localStorage.getItem("lotto_tickets");
@@ -169,61 +166,49 @@
       const saveTickets = useCallback(() => {
         try {
           localStorage.setItem("lotto_tickets", JSON.stringify(tickets));
-          setSaveMsg("Saved ✓");
+          setSaveMsg("נשמר ✓");
           setTimeout(() => setSaveMsg(""), 2000);
-        } catch { setSaveMsg("Failed ✗"); }
+        } catch { setSaveMsg("נכשל ✗"); }
       }, [tickets]);
 
-      const fetchResults = async () => {
-        const start = parseInt(drawRange.start);
-        const end = parseInt(drawRange.end);
-        if (!start || !end || start > end) { setError("Please enter a valid draw range."); return; }
-        if (end - start > 20) { setError("Please limit the range to 20 draws at a time."); return; }
-        setLoading(true); setError(""); setResults([]);
-
-        const prompt = `Search paisresults.co.il or mifal-hapayis.co.il for Israeli Lotto draw results from draw number ${start} to ${end}.
-For each draw found in that range return the 6 winning numbers (formatted as 2-digit strings, e.g. "03") and the strong number (1–7 as a string).
-Respond ONLY with a raw JSON array, no markdown, no explanation, no extra text:
-[{"draw_number": ${start}, "numbers": ["03","07","14","22","31","36"], "strong": "4"}, ...]
-Skip any draw you cannot find results for.`;
+      const processText = () => {
+        if (!rawText.trim()) { setError("אנא הכנס טקסט עם תוצאות הגרלה."); return; }
+        setError("");
 
         try {
-          const response = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-key": ANTHROPIC_API_KEY,
-              "anthropic-version": "2023-06-01",
-              "anthropic-dangerous-direct-browser-access": "true"
-            },
-            body: JSON.stringify({
-              model: "claude-sonnet-4-20250514",
-              max_tokens: 1000,
-              tools: [{ type: "web_search_20250305", name: "web_search" }],
-              messages: [{ role: "user", content: prompt }]
-            })
-          });
+          // ביטוי רגולרי שמותאם בדיוק למבנה של האתר שהצגת
+          const regex = /בהגרלה מספר:\s*(\d+).*?עלו המספרים:\s*([\d\s,]+)\s*המספר החזק:\s*(\d+)/g;
+          const parsedDraws = [];
+          let match;
 
-          if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || `API error ${response.status}`);
+          while ((match = regex.exec(rawText)) !== null) {
+            const drawNum = parseInt(match[1]);
+            const numbersStr = match[2];
+            const strongStr = match[3].trim();
+
+            // פירוק מערך המספרים וניקוי רווחים
+            const numbers = numbersStr.split(",")
+              .map(n => n.trim().padStart(2, "0"))
+              .filter(n => n.length > 0);
+
+            if (numbers.length === 6) {
+              parsedDraws.push({
+                draw_number: drawNum,
+                numbers: numbers,
+                strong: strongStr
+              });
+            }
           }
 
-          const data = await response.json();
-          const text = data.content.filter(b => b.type === "text").map(b => b.text).join("\n");
-          const jsonMatch = text.replace(/```json|```/g, "").trim().match(/\[[\s\S]*\]/);
-          if (!jsonMatch) throw new Error("Could not parse results. Try again.");
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (!Array.isArray(parsed) || parsed.length === 0) {
-            setError("No draws found for that range. Make sure the draw numbers exist.");
-          } else {
-            setResults(parsed);
-            setTab("results");
+          if (parsedDraws.length === 0) {
+            throw new Error("לא הצלחנו למצוא נתוני הגרלה בפורמט התקין. ודא שהעתקת את שורת 'בהגרלה מספר...' במלואה.");
           }
+
+          setResults(parsedDraws);
+          setTab("results");
         } catch(e) {
-          setError("Error: " + e.message);
+          setError(e.message);
         }
-        setLoading(false);
       };
 
       const addTicket = () => setTickets(t => [...t, makeBlank()]);
@@ -237,16 +222,17 @@ Skip any draw you cannot find results for.`;
 
             {/* Header */}
             <div style={{textAlign:"center", padding:"32px 0 24px"}}>
-              <div style={{fontSize:10, letterSpacing:4, color:"#d4af37", marginBottom:8, fontWeight:600}}>מפעל הפייס · MIFAL HAPAYIS</div>
-              <h1 style={{fontSize:36, fontWeight:800, background:"linear-gradient(135deg,#c3d4ff,#7a9fff,#d4af37)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
-                🎱 Lotto Checker
-              </h1>
-              <p style={{color:"#4a5a7a", fontSize:13, marginTop:6}}>Save your tickets · Check any draw range · AI-powered results</p>
+              <img
+                src="https://www.pais.co.il/images/Lotto-sml_1.png"
+                alt="Lotto Logo"
+                style={{height:80, objectFit:"contain", marginBottom:14, filter:"drop-shadow(0 4px 16px rgba(212,175,55,0.25))"}}
+              />
+              <p style={{color:"#4a5a7a", fontSize:13, marginTop:2}}>שמירת טפסים קבועים · בדיקה מיידית בחינם וללא קוד API</p>
             </div>
 
             {/* Tabs */}
             <div style={{display:"flex", gap:6, marginBottom:20, background:"rgba(255,255,255,0.04)", borderRadius:10, padding:4}}>
-              {[["tickets","🎟 My Tickets"],["check","🔍 Check Draws"],["results",`🏆 Results${results.length ? ` (${results.length})` : ""}`]].map(([key,label]) => (
+              {[["tickets","🎟 הטפסים שלי"],["check","🔍 הדבקת הגרלות"],["results",`🏆 תוצאות הבדיקה${results.length ? ` (${results.length})` : ""}`]].map(([key,label]) => (
                 <button key={key} className={`tab-btn${tab===key?" active":""}`} onClick={() => setTab(key)}>{label}</button>
               ))}
             </div>
@@ -256,15 +242,15 @@ Skip any draw you cannot find results for.`;
               <div>
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12}}>
                   <span style={{color:"#7a8ab0", fontSize:12}}>
-                    <span style={{fontFamily:"monospace"}}>{validTickets.length}/{tickets.length}</span> tickets complete
+                    <span>{validTickets.length}/{tickets.length}</span> טפסים מלאים
                   </span>
                   <div style={{display:"flex", gap:8}}>
-                    <button className="save-btn" onClick={saveTickets}>{saveMsg || "💾 Save"}</button>
+                    <button className="save-btn" onClick={saveTickets}>{saveMsg || "💾 שמור טפסים"}</button>
                     <button onClick={addTicket} style={{
                       background:"rgba(100,140,255,0.15)", border:"1px solid rgba(100,140,255,0.35)",
                       color:"#c3d4ff", padding:"7px 14px", borderRadius:8, cursor:"pointer",
                       fontWeight:700, fontSize:12, fontFamily:"inherit"
-                    }}>+ Add Ticket</button>
+                    }}>+ הוסף טופס</button>
                   </div>
                 </div>
                 {tickets.map((t, i) => (
@@ -275,7 +261,7 @@ Skip any draw you cannot find results for.`;
                     }} />
                 ))}
                 <div className="info-box">
-                  6 numbers (1–37) per ticket · Strong number in gold (1–7) · Click <b>+ Add Ticket</b> to add more rows · Tickets saved in your browser.
+                  הזן 6 מספרים (1–37) לכל טור · מספר חזק בזהב (1–7) · הנתונים נשמרים בדפדפן שלך.
                 </div>
               </div>
             )}
@@ -283,32 +269,24 @@ Skip any draw you cannot find results for.`;
             {/* CHECK */}
             {tab === "check" && (
               <div className="panel">
-                <h2 style={{fontSize:16, fontWeight:700, marginBottom:18, color:"#c3d4ff"}}>Enter Draw Range</h2>
-                <div style={{display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-end"}}>
-                  {[["start","FROM DRAW #","3405"],["end","TO DRAW #","3415"]].map(([key,label,ph]) => (
-                    <div key={key}>
-                      <label style={{display:"block", fontSize:10, color:"#7a8ab0", marginBottom:5, letterSpacing:1, fontWeight:600}}>{label}</label>
-                      <input className="draw-input" type="number" value={drawRange[key]} placeholder={ph}
-                        onChange={e => setDrawRange(p => ({...p, [key]: e.target.value}))} />
-                    </div>
-                  ))}
-                  <button className="check-btn" onClick={fetchResults} disabled={loading}>
-                    {loading ? "⏳ Searching..." : "🔍 Check Now"}
-                  </button>
-                </div>
+                <h2 style={{fontSize:16, fontWeight:700, marginBottom:10, color:"#c3d4ff", textAlign:"right"}}>הדבק את תוצאות ההגרלה</h2>
+                <p style={{fontSize:12, color:"#7a8ab0", marginBottom:12, textAlign:"right"}}>העתק את הטקסט מאתר paisresults.co.il והדבק אותו כאן:</p>
+                
+                <textarea 
+                  className="paste-area" 
+                  placeholder="לדוגמה:&#10;בהגרלה מספר: 3928 מתאריך: 24/05/2026 עלו המספרים: 02 , 05 , 06 , 08 , 30 , 37 המספר החזק: 6 ."
+                  value={rawText}
+                  onChange={e => setRawText(e.target.value)}
+                />
+
+                <button className="check-btn" onClick={processText}>
+                  🔍 בדוק התאמות עכשיו
+                </button>
+                
                 {error && <div className="error-box">{error}</div>}
-                {loading && (
-                  <div style={{marginTop:18, textAlign:"center", color:"#4a5a7a", fontSize:13}}>
-                    Fetching draw results via AI web search…
-                    <br/><span style={{fontSize:11}}>This may take a few seconds</span>
-                  </div>
-                )}
+                
                 <div className="warn-box">
-                  ℹ Results are fetched live using the Anthropic AI API with web search.
-                  Max 20 draws per query.
-                  {validTickets.length < tickets.length && (
-                    <span style={{color:"#cc6040"}}> ⚠ {tickets.length - validTickets.length} tickets are incomplete.</span>
-                  )}
+                  ℹ הפענוח מתבצע מקומית במחשב שלך באופן מיידי, ללא צורך במפתח API מורכב או בתשלום. ניתן להדביק מספר הגרלות בבת אחת.
                 </div>
               </div>
             )}
@@ -319,13 +297,12 @@ Skip any draw you cannot find results for.`;
                 {results.length === 0
                   ? <div style={{textAlign:"center", padding:"50px 20px", color:"#4a5a7a"}}>
                       <div style={{fontSize:40, marginBottom:12}}>🎱</div>
-                      <div style={{fontSize:15, fontWeight:600, color:"#7a8ab0", marginBottom:6}}>No results yet</div>
-                      <div style={{fontSize:12}}>Go to the Check tab to search for draws</div>
+                      <div style={{fontSize:15, fontWeight:600, color:"#7a8ab0", marginBottom:6}}>אין תוצאות להצגה</div>
+                      <div style={{fontSize:12}}>עבור ללשונית "הדבקת הגרלות" והזן נתונים</div>
                     </div>
                   : <>
-                      <div style={{color:"#7a8ab0", fontSize:12, marginBottom:14}}>
-                        Found <span style={{fontFamily:"monospace"}}>{results.length}</span> draws ·
-                        checking against <span style={{fontFamily:"monospace"}}>{validTickets.length}</span> complete tickets
+                      <div style={{color:"#7a8ab0", fontSize:12, marginBottom:14, textAlign:"right"}}>
+                        פוענחו <span>{results.length}</span> הגרלות · נבדקות מול <span>{validTickets.length}</span> טפסים מלאים.
                       </div>
                       {[...results].sort((a,b) => b.draw_number - a.draw_number).map(draw => (
                         <DrawCard key={draw.draw_number} draw={draw} tickets={validTickets} />
