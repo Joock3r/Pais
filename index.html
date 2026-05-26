@@ -109,18 +109,19 @@
     }
 
     function DrawCard({ draw, tickets }) {
+      // עדכון תנאי: מסננים רק טפסים שיש להם לפחות 3 מספרים תואמים לזכייה
       const winners = tickets.map((t, i) => {
         const matched = t.numbers.filter(n => n && draw.numbers.includes(n));
         const strongMatch = t.strong && t.strong === draw.strong;
         return { index: i, matched, strongMatch };
-      }).filter(w => w.matched.length >= 2);
+      }).filter(w => w.matched.length >= 3);
 
       return (
         <div className="draw-card">
           <div className="draw-header">
             <span className="draw-num">הגרלה מספר #{draw.draw_number}</span>
             {winners.length > 0 && (
-              <span className="match-badge">{winners.length} התאמות</span>
+              <span className="match-badge">{winners.length} טפסים זוכים</span>
             )}
           </div>
           <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:10, direction:"ltr", justifyContent:"flex-end"}}>
@@ -128,7 +129,7 @@
             <Ball value={draw.strong} type="strong" />
           </div>
           {winners.length === 0
-            ? <div style={{color:"#4a5a7a", fontSize:12, fontStyle:"italic"}}>אין טפסים תואמים (נדרש לפחות 2 מספרים).</div>
+            ? <div style={{color:"#4a5a7a", fontSize:12, fontStyle:"italic"}}>אין טפסים זוכים בהגרלה זו (נדרש לפחות 3 מספרים).</div>
             : winners.map(w => (
               <div key={w.index} className="match-ticket">
                 <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:6}}>
@@ -227,7 +228,7 @@
                 alt="Lotto Logo"
                 style={{height:80, objectFit:"contain", marginBottom:14, filter:"drop-shadow(0 4px 16px rgba(212,175,55,0.25))"}}
               />
-              <p style={{color:"#4a5a7a", fontSize:13, marginTop:2}}>שמירת טפסים קבועים · העתקה קלה ללא עלות</p>
+              <p style={{color:"#4a5a7a", fontSize:13, marginTop:2}}>שמירת טפסים קבועים · בדיקת זכאות (מינימום 3 מספרים)</p>
             </div>
 
             {/* Tabs */}
@@ -271,8 +272,6 @@
               <div className="panel">
                 <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", marginBottom:10}}>
                   <h2 style={{fontSize:16, fontWeight:700, color:"#c3d4ff"}}>הדבק את תוצאות ההגרלה</h2>
-                  
-                  {/* כפתור הקישור החדש לאתר התוצאות */}
                   <a href="https://paisresults.co.il" target="_blank" rel="noopener noreferrer" className="link-btn">
                     🌐 פתח את אתר התוצאות לקבלת נתונים
                   </a>
@@ -294,7 +293,7 @@
                 {error && <div className="error-box">{error}</div>}
                 
                 <div className="warn-box">
-                  ℹ️ ניתן להדביק מספר רב של הגרלות בבת אחת (למשל דף שלם שהעתקת). המערכת תסנן ותשלוף אוטומטית רק את הנתונים הנחוצים.
+                  ℹ️ ניתן להדביק מספר רב של הגרלות בבת אחת. המערכת תציג רק טפסים שהשיגו זכייה (3 מספרים ומעלה).
                 </div>
               </div>
             )}
