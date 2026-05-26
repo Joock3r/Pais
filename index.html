@@ -26,7 +26,9 @@
 
     .check-btn { height: 42px; padding: 0 24px; border-radius: 9px; border: none; font-weight: 700; font-size: 13px; font-family: inherit; transition: all 0.2s; width: 100%; margin-top: 12px; }
     .check-btn:enabled { cursor: pointer; background: linear-gradient(135deg, #4a7fff, #2a50cc); color: white; box-shadow: 0 4px 16px rgba(74,127,255,0.3); }
-    .check-btn:disabled { cursor: not-allowed; background: rgba(100,140,255,0.1); color: #4a5a7a; }
+    
+    .link-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); background: rgba(212,175,55,0.08); color: #d4af37; font-weight: 700; font-size: 12px; text-decoration: none; transition: all 0.2s; margin-bottom: 14px; }
+    .link-btn:hover { background: rgba(212,175,55,0.15); box-shadow: 0 0 12px rgba(212,175,55,0.1); }
 
     .save-btn { background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.4); color: #d4af37; padding: 7px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; font-family: inherit; }
 
@@ -176,7 +178,6 @@
         setError("");
 
         try {
-          // ביטוי רגולרי שמותאם בדיוק למבנה של האתר שהצגת
           const regex = /בהגרלה מספר:\s*(\d+).*?עלו המספרים:\s*([\d\s,]+)\s*המספר החזק:\s*(\d+)/g;
           const parsedDraws = [];
           let match;
@@ -186,7 +187,6 @@
             const numbersStr = match[2];
             const strongStr = match[3].trim();
 
-            // פירוק מערך המספרים וניקוי רווחים
             const numbers = numbersStr.split(",")
               .map(n => n.trim().padStart(2, "0"))
               .filter(n => n.length > 0);
@@ -227,7 +227,7 @@
                 alt="Lotto Logo"
                 style={{height:80, objectFit:"contain", marginBottom:14, filter:"drop-shadow(0 4px 16px rgba(212,175,55,0.25))"}}
               />
-              <p style={{color:"#4a5a7a", fontSize:13, marginTop:2}}>שמירת טפסים קבועים · בדיקה מיידית בחינם וללא קוד API</p>
+              <p style={{color:"#4a5a7a", fontSize:13, marginTop:2}}>שמירת טפסים קבועים · העתקה קלה ללא עלות</p>
             </div>
 
             {/* Tabs */}
@@ -269,8 +269,16 @@
             {/* CHECK */}
             {tab === "check" && (
               <div className="panel">
-                <h2 style={{fontSize:16, fontWeight:700, marginBottom:10, color:"#c3d4ff", textAlign:"right"}}>הדבק את תוצאות ההגרלה</h2>
-                <p style={{fontSize:12, color:"#7a8ab0", marginBottom:12, textAlign:"right"}}>העתק את הטקסט מאתר paisresults.co.il והדבק אותו כאן:</p>
+                <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", marginBottom:10}}>
+                  <h2 style={{fontSize:16, fontWeight:700, color:"#c3d4ff"}}>הדבק את תוצאות ההגרלה</h2>
+                  
+                  {/* כפתור הקישור החדש לאתר התוצאות */}
+                  <a href="https://paisresults.co.il" target="_blank" rel="noopener noreferrer" className="link-btn">
+                    🌐 פתח את אתר התוצאות לקבלת נתונים
+                  </a>
+                </div>
+                
+                <p style={{fontSize:12, color:"#7a8ab0", marginBottom:12, textAlign:"right"}}>לחץ על הכפתור למעלה, העתק את שורות ההגרלה הרלוונטיות והדבק אותן כאן:</p>
                 
                 <textarea 
                   className="paste-area" 
@@ -286,7 +294,7 @@
                 {error && <div className="error-box">{error}</div>}
                 
                 <div className="warn-box">
-                  ℹ הפענוח מתבצע מקומית במחשב שלך באופן מיידי, ללא צורך במפתח API מורכב או בתשלום. ניתן להדביק מספר הגרלות בבת אחת.
+                  ℹ️ ניתן להדביק מספר רב של הגרלות בבת אחת (למשל דף שלם שהעתקת). המערכת תסנן ותשלוף אוטומטית רק את הנתונים הנחוצים.
                 </div>
               </div>
             )}
