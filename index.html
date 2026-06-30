@@ -192,48 +192,168 @@
 
   /* ─────────────── TicketEditor ─────────────── */
   function TicketEditor({ index, ticket, onChange, onRemove, total, onScan, scanning }) {
-    const fileRef = useRef();
-    const handleNum = (i, val) => {
-      const nums = [...ticket.numbers];
-      const p = parseInt(val);
-      nums[i] = val===""?"": isNaN(p)?nums[i]: Math.min(37,Math.max(1,p)).toString().padStart(2,"0");
+    const fileRef  = useRef();
+    const [collapsed, setCollapsed] = useState(false);
+
+    const selectedNums = new Set(ticket.numbers.filter(n=>n!=="").map(n=>parseInt(n)));
+    const strongNum    = ticket.strong ? parseInt(ticket.strong) : null;
+    const isFull       = selectedNums.size === 6 && strongNum !== null;
+
+    // Auto-collapse once ticket is complete
+    useEffect(() => {
+      if (isFull) setCollapsed(true);
+    }, [isFull]);
+
+    const toggleNum = n => {
+      const sel = new Set(selectedNums);
+      if (sel.has(n)) { sel.delete(n); }
+      else if (sel.size < 6) { sel.add(n); }
+      else { return; }
+      const nums = [...sel].sort((a,b)=>a-b).map(x=>x.toString().padStart(2,"0"));
+      while (nums.length < 6) nums.push("");
       onChange({...ticket, numbers: nums});
     };
-    const handleStrong = val => {
-      const p = parseInt(val);
-      onChange({...ticket, strong: val===""?"": isNaN(p)?ticket.strong: Math.min(7,Math.max(1,p)).toString()});
+
+    const toggleStrong = n =>
+      onChange({...ticket, strong: strongNum===n ? "" : n.toString()});
+
+    // Deselect from collapsed view → also expand
+    const deselect = n => {
+      toggleNum(n);
+      setCollapsed(false);
     };
+    const deselectStrong = () => {
+      onChange({...ticket, strong: ""});
+      setCollapsed(false);
+    };
+
     const handleFile = e => {
       if (e.target.files[0]) onScan(e.target.files[0], index);
       e.target.value = "";
     };
-    return (
-      <div className={`ticket-row ${ticket.double?"double":"normal"}`}>
-        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7}}>
-          <div style={{display:"flex", alignItems:"center", gap:6}}>
-            <span className="ticket-label">טופס {index+1}</span>
-            <button className={`double-badge ${ticket.double?"on":"off"}`}
-              onClick={() => onChange({...ticket, double: !ticket.double})}>
-              דאבל
+
+    // ── Collapsed view ──
+    if (collapsed) {
+      return (
+        <div className={`ticket-row ${ticket.double?"double":"normal"}`}
+          style={{paddingBottom:10}}>
+          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+            <div style={{display:"flex", alignItems:"center", gap:6}}>
+              <span className="ticket-label">טופס {index+1}</span>
+              {ticket.double && (
+                <span style={{background:"rgba(255,160,0,0.2)", color:"#ffaa00", fontSize:10,
+                  padding:"1px 6px", borderRadius:4, fontWeight:700, border:"1px solid rgba(255,160,0,0.35)"}}>דאבל</span>
+              )}
+              <span style={{fontSize:10, color:"#50c060"}}>✓ מלא</span>
+            </div>
+            <div style={{display:"flex", gap:6, alignItems:"center"}}>
+              <button onClick={() => setCollapsed(false)} title="ערוך" style={{
+                background:"rgba(100,140,255,0.1)", border:"1px solid rgba(100,140,255,0.25)",
+                color:"#8aabff", borderRadius:6, padding:"2px 9px", cursor:"pointer",
+                fontWeight:700, fontSize:11, fontFamily:"inherit"
+              }}>✏️ ערוך</button>
+              {total>1 && <button className="remove-btn" onClick={onRemove}>×</button>}
+            </div>
+          </div>
+          {/* Selected balls — click any to deselect + expand */}
+          <div style={{display:"flex", gap:5, flexWrap:"wrap", alignItems:"center"}}>
+            {[...selectedNums].sort((a,b)=>a-b).map(n => (
+              <button key={n} onClick={() => deselect(n)} title="לחץ לביטול"
+                style={{
+                  width:34, height:34, borderRadius:"50%", border:"none", cursor:"pointer",
+                  fontWeight:700, fontSize:11, fontFamily:"monospace", flexShrink:0,
+                  background:"linear-gradient(135deg,#4a7fff,#1a40cc)", color:"white",
+                  boxShadow:"0 0 8px rgba(74,127,255,0.4)", transition:"transform 0.15s"
+                }}
+                onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
+                onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
+                {n.toString().padStart(2,"0")}
+              </button>
+            ))}
+            <div style={{width:1, height:22, background:"rgba(255,255,255,0.1)", margin:"0 2px", flexShrink:0}}/>
+            <button onClick={deselectStrong} title="לחץ לביטול"
+              style={{
+                width:34, height:34, borderRadius:"50%", border:"none", cursor:"pointer",
+                fontWeight:700, fontSize:12, fontFamily:"monospace", flexShrink:0,
+                background:"linear-gradient(135deg,#d4af37,#f5e27d)", color:"#1a1200",
+                boxShadow:"0 0 8px rgba(212,175,55,0.4)", transition:"transform 0.15s"
+              }}
+              onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
+              {strongNum}
             </button>
-            <button className="scan-btn" disabled={scanning} onClick={() => fileRef.current.click()}>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Expanded (editing) view ──
+    return (
+      <div className={`ticket-row ${ticket.double?"double":"normal"}`} style={{paddingBottom:14}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10}}>
+          <div style={{display:"flex", alignItems:"center", gap:6, flexWrap:"wrap"}}>
+            <span className="ticket-label">טופס {index+1}</span>
+            <span style={{fontSize:11, fontFamily:"monospace",
+              color: isFull ? "#50c060" : "#4a5a7a"}}>
+              {selectedNums.size}/6{strongNum ? " ★" : ""}
+            </span>
+            <button className={`double-badge ${ticket.double?"on":"off"}`}
+              onClick={() => onChange({...ticket, double: !ticket.double})}>דאבל</button>
+            <button className="scan-btn" disabled={scanning}
+              onClick={() => fileRef.current.click()}>
               {scanning?"⏳":"📸"} סרוק
             </button>
             <input ref={fileRef} type="file" accept="image/*" capture="camera"
               style={{display:"none"}} onChange={handleFile} />
           </div>
-          {total>1 && (
-            <button className="remove-btn" onClick={onRemove}>×</button>
-          )}
+          {total>1 && <button className="remove-btn" onClick={onRemove}>×</button>}
         </div>
-        <div className="ticket-inputs">
-          {ticket.numbers.map((n,i) => (
-            <input key={i} className="num-input" type="number" min="1" max="37"
-              value={n} placeholder="--" onChange={e=>handleNum(i,e.target.value)} />
-          ))}
-          <div className="divider"/>
-          <input className="strong-input" type="number" min="1" max="7"
-            value={ticket.strong} placeholder="★" onChange={e=>handleStrong(e.target.value)} />
+
+        {/* Number grid 1–37 */}
+        <div style={{display:"flex", flexWrap:"wrap", gap:4, marginBottom:10}}>
+          {Array.from({length:37},(_,i)=>i+1).map(n => {
+            const sel      = selectedNums.has(n);
+            const disabled = !sel && selectedNums.size >= 6;
+            return (
+              <button key={n} onClick={() => toggleNum(n)} disabled={disabled}
+                style={{
+                  width:34, height:34, borderRadius:"50%", border:"none",
+                  cursor: disabled ? "not-allowed" : "pointer",
+                  fontWeight:700, fontSize:11, fontFamily:"monospace",
+                  flexShrink:0, transition:"all 0.15s",
+                  background: sel
+                    ? "linear-gradient(135deg,#4a7fff,#1a40cc)"
+                    : disabled ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
+                  color: sel ? "white" : disabled ? "#2a3a5a" : "#4a5a7a",
+                  boxShadow: sel ? "0 0 10px rgba(74,127,255,0.5)" : "none",
+                  transform: sel ? "scale(1.08)" : "scale(1)"
+                }}>
+                {n.toString().padStart(2,"0")}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Strong grid 1–7 */}
+        <div style={{display:"flex", alignItems:"center", gap:6, flexWrap:"wrap"}}>
+          <span style={{fontSize:9, color:"#d4af37", fontWeight:600, letterSpacing:1, marginLeft:2}}>חזק:</span>
+          {Array.from({length:7},(_,i)=>i+1).map(n => {
+            const sel = strongNum===n;
+            return (
+              <button key={n} onClick={() => toggleStrong(n)}
+                style={{
+                  width:34, height:34, borderRadius:"50%", border:"none", cursor:"pointer",
+                  fontWeight:700, fontSize:12, fontFamily:"monospace",
+                  flexShrink:0, transition:"all 0.15s",
+                  background: sel ? "linear-gradient(135deg,#d4af37,#f5e27d)" : "rgba(255,255,255,0.06)",
+                  color: sel ? "#1a1200" : "#4a5a7a",
+                  boxShadow: sel ? "0 0 10px rgba(212,175,55,0.5)" : "none",
+                  transform: sel ? "scale(1.08)" : "scale(1)"
+                }}>
+                {n}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -245,7 +365,7 @@
       const matched = t.numbers.filter(n => n && draw.numbers.includes(n));
       const strongMatch = t.strong && t.strong === draw.strong;
       return { index:i, matched, strongMatch, double: t.double };
-    }).filter(w => w.matched.length >= 2);
+    }).filter(w => w.matched.length >= 3);
 
     const label = typeof draw.draw_number === "number"
       ? `הגרלה #${draw.draw_number}`
@@ -262,7 +382,7 @@
           <Ball value={draw.strong} type="strong"/>
         </div>
         {winners.length===0
-          ? <div style={{color:"#4a5a7a", fontSize:12, fontStyle:"italic"}}>אין טפסים עם 2+ מספרים תואמים.</div>
+          ? <div style={{color:"#4a5a7a", fontSize:12, fontStyle:"italic"}}>אין טפסים עם 3+ מספרים תואמים (המינימום לזכייה).</div>
           : winners.map(w => (
             <div key={w.index} className="match-ticket">
               <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:6}}>
@@ -297,8 +417,9 @@
 
     const toggleNum = n => {
       setDrawn(p => {
+        if (!p.includes(n) && p.length >= 6) return p; // max 6
         const next = p.includes(n) ? p.filter(x=>x!==n) : [...p, n];
-        if (!p.includes(n)) setLastHit(n + "-" + Date.now()); // trigger pop
+        if (!p.includes(n)) setLastHit(n + "-" + Date.now());
         return next;
       });
     };
@@ -308,14 +429,13 @@
     };
     const reset = () => { setDrawn([]); setStrong(null); setLastHit(null); };
 
-    // Tier per ticket: none / low(1-2) / medium(3-4) / high(5) / jackpot(6)
+    // Tier per ticket — minimum win requires 3+ regular numbers (strong alone never counts)
+    // none(0-2) / medium(3-4) / high(5) / jackpot(6)
     const tier = (count, sMatch) => {
-      const total = count + (sMatch ? 0.5 : 0);
+      if (count < 3) return "none"; // 2 regulars + strong is still NOT a win
       if (count===6 && sMatch) return "jackpot";
       if (count>=5) return "high";
-      if (count>=3) return "medium";
-      if (count>=1) return "low";
-      return "none";
+      return "medium"; // 3-4 matches
     };
 
     return (
@@ -364,15 +484,24 @@
 
         {/* Grid 1-37 */}
         <div style={{marginBottom:16}}>
-          <div style={{fontSize:10, color:"#7a8ab0", fontWeight:600, letterSpacing:1, marginBottom:8}}>מספרים (1–37)</div>
+          <div style={{fontSize:10, color:"#7a8ab0", fontWeight:600, letterSpacing:1, marginBottom:8}}>
+            מספרים (1–37)
+            {drawn.length >= 6 && <span style={{color:"#ff7070", marginRight:8, fontWeight:700}}> · 6/6 נבחרו</span>}
+          </div>
           <div style={{display:"flex", flexWrap:"wrap", gap:5}}>
-            {Array.from({length:37},(_,i)=>i+1).map(n => (
-              <button key={n}
-                className={`num-ball-grid ${drawn.includes(n)?"on":"off"}`}
-                onClick={()=>toggleNum(n)}>
-                {n.toString().padStart(2,"0")}
-              </button>
-            ))}
+            {Array.from({length:37},(_,i)=>i+1).map(n => {
+              const sel      = drawn.includes(n);
+              const disabled = !sel && drawn.length >= 6;
+              return (
+                <button key={n}
+                  className={`num-ball-grid ${sel?"on":"off"}`}
+                  disabled={disabled}
+                  onClick={()=>toggleNum(n)}
+                  style={{opacity: disabled ? 0.25 : 1, cursor: disabled ? "not-allowed" : "pointer"}}>
+                  {n.toString().padStart(2,"0")}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -416,8 +545,8 @@
                         padding:"1px 6px", borderRadius:4, fontWeight:700, border:"1px solid rgba(255,160,0,0.35)"}}>דאבל</span>}
                       {t_tier==="jackpot" && <span style={{color:"#d4af37", fontSize:12}}>🏆 ג'קפוט!</span>}
                       {t_tier==="high"    && <span style={{color:"#c3d4ff", fontSize:11}}>🔥 {count}/6</span>}
-                      {t_tier==="medium"  && <span style={{color:"#80e090", fontSize:11}}>{count}/6 התאמות</span>}
-                      {t_tier==="low"     && <span style={{color:"#5a6a8a", fontSize:11}}>{count}/6</span>}
+                      {t_tier==="medium"  && <span style={{color:"#80e090", fontSize:11}}>{count}/6 — זכייה!</span>}
+                      {t_tier==="none"    && <span style={{color:"#5a6a8a", fontSize:11}}>{count}/6 (צריך 3 לזכייה)</span>}
                     </div>
                     {/* Progress dots */}
                     <div style={{display:"flex", gap:3}}>
