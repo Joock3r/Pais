@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -113,6 +112,7 @@
   <script type="text/babel">
     const { useEffect, useRef, useState } = React;
     const TICKETS_KEY = "lotto_checker_tickets_v2";
+    const HISTORY_KEY = "lotto_checker_draw_history_v1";
     const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbz4VsyUfvdPJnzcl6gUuVQfIgsYkLyCq7WQjpt9BTzSWWX5ZY_trcD6NnBdsN_Cl_A/exec";
     const MAX_RANGE = 50;
 
@@ -124,6 +124,20 @@
       const numbers = [...new Set((ticket.numbers || []).map(Number).filter(number => number >= 1 && number <= 37))].slice(0, 6).sort((a, b) => a - b);
       const strong = Number(ticket.strong);
       return { numbers, strong: strong >= 1 && strong <= 7 ? strong : null, double: Boolean(ticket.double) };
+    }
+
+    function normalizeDraw(draw) {
+      const drawNumber = Number(draw.draw_number);
+      const numbers = Array.isArray(draw.numbers) ? draw.numbers.map(number => String(Number(number)).padStart(2, "0")) : [];
+      const strong = Number(draw.strong);
+      if (!Number.isInteger(drawNumber) || numbers.length !== 6 || numbers.some(number => Number(number) < 1 || Number(number) > 37) || strong < 1 || strong > 7) return null;
+      return { draw_number: drawNumber, numbers, strong: String(strong), source_url: draw.source_url || `https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=${drawNumber}` };
+    }
+
+    function mergeDrawHistory(...drawGroups) {
+      const byDrawNumber = new Map();
+      drawGroups.flat().map(normalizeDraw).filter(Boolean).forEach(draw => byDrawNumber.set(draw.draw_number, draw));
+      return [...byDrawNumber.values()].sort((a, b) => b.draw_number - a.draw_number);
     }
 
     function Ball({ value, strong = false }) {
@@ -203,6 +217,7 @@
       const [fromDraw, setFromDraw] = useState(3944);
       const [toDraw, setToDraw] = useState(3944);
       const [results, setResults] = useState([]);
+      const [history, setHistory] = useState([]);
       const [fetchErrors, setFetchErrors] = useState([]);
       const [message, setMessage] = useState("");
       const [loading, setLoading] = useState(false);
@@ -213,6 +228,8 @@
         try {
           const storedTickets = JSON.parse(localStorage.getItem(TICKETS_KEY));
           if (Array.isArray(storedTickets) && storedTickets.length) setTickets(storedTickets.map(normalizeTicket));
+          const storedHistory = JSON.parse(localStorage.getItem(HISTORY_KEY));
+          if (Array.isArray(storedHistory)) setHistory(mergeDrawHistory(storedHistory));
         } catch (_) {}
       }, []);
 
@@ -278,7 +295,13 @@
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const payload = await response.json();
           if (!payload.ok && !(payload.draws || []).length) throw new Error(payload.error || "לא התקבלו תוצאות.");
-          setResults((payload.draws || []).sort((a, b) => b.draw_number - a.draw_number));
+          const receivedDraws = (payload.draws || []).map(normalizeDraw).filter(Boolean).sort((a, b) => b.draw_number - a.draw_number);
+          setResults(receivedDraws);
+          setHistory(current => {
+            const updated = mergeDrawHistory(current, receivedDraws);
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+            return updated;
+          });
           setFetchErrors(payload.errors || []);
           setTab("results");
         } catch (error) {
@@ -302,6 +325,7 @@
             <button className={`tab${tab === "tickets" ? " active" : ""}`} onClick={() => setTab("tickets")}>הטפסים שלי</button>
             <button className={`tab${tab === "check" ? " active" : ""}`} onClick={() => setTab("check")}>בדיקה אוטומטית</button>
             <button className={`tab${tab === "results" ? " active" : ""}`} onClick={() => setTab("results")}>תוצאות {results.length ? `(${results.length})` : ""}</button>
+            <button className={`tab${tab === "history" ? " active" : ""}`} onClick={() => setTab("history")}>היסטוריה {history.length ? `(${history.length})` : ""}</button>
           </nav>
 
           {tab === "tickets" && <section>
@@ -335,6 +359,13 @@
               <div className="summary">{results.length} הגרלות נבדקו מול {validTickets.length} טפסים מלאים</div>
               {fetchErrors.length > 0 && <div className="message error">{fetchErrors.length} הגרלות לא נטענו: {fetchErrors.map(item => item.draw_number).join(", ")}</div>}
               {results.map(draw => <DrawCard key={draw.draw_number} draw={draw} tickets={validTickets} />)}
+            </>}
+          </section>}
+
+          {tab === "history" && <section>
+            {history.length === 0 ? <div className="empty">עדיין לא נבדקו הגרלות.</div> : <>
+              <div className="summary">{history.length} הגרלות ייחודיות שנבדקו בעבר</div>
+              {history.map(draw => <DrawCard key={draw.draw_number} draw={draw} tickets={validTickets} />)}
             </>}
           </section>}
         </main>
