@@ -1,948 +1,372 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎱 Lotto Checker</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>בודק לוטו</title>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #080d1a; font-family: 'Segoe UI', sans-serif; color: #e8eeff; }
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-    input[type=number] { -moz-appearance: textfield; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: rgba(100,140,255,0.3); border-radius: 2px; }
-
-    .tab-btn {
-      flex: 1; padding: 9px 4px; border-radius: 8px; border: none; cursor: pointer;
-      font-weight: 700; font-size: 12px; transition: all 0.2s; font-family: inherit;
-      background: transparent; color: #4a5a7a;
-    }
-    .tab-btn.active { background: rgba(100,140,255,0.18); color: #c3d4ff; box-shadow: 0 0 0 1px rgba(100,140,255,0.3); }
-
-    .num-input {
-      width: 40px; height: 36px; border-radius: 8px; text-align: center; font-size: 13px;
-      font-weight: 700; outline: none; font-family: monospace;
-      border: 1px solid rgba(100,140,255,0.3); background: rgba(100,140,255,0.08); color: #c3d4ff;
-    }
-    .strong-input {
-      width: 40px; height: 36px; border-radius: 8px; text-align: center; font-size: 13px;
-      font-weight: 700; outline: none; font-family: monospace;
-      border: 1px solid rgba(212,175,55,0.4); background: rgba(212,175,55,0.08); color: #d4af37;
-    }
-    .draw-input {
-      width: 110px; height: 42px; border-radius: 9px;
-      border: 1px solid rgba(100,140,255,0.3); background: rgba(100,140,255,0.08);
-      color: #c3d4ff; text-align: center; font-size: 15px; font-weight: 700; outline: none; font-family: monospace;
-    }
-    .check-btn {
-      height: 42px; padding: 0 24px; border-radius: 9px; border: none;
-      font-weight: 700; font-size: 13px; font-family: inherit; transition: all 0.2s;
-      cursor: pointer; background: linear-gradient(135deg, #4a7fff, #2a50cc);
-      color: white; box-shadow: 0 4px 16px rgba(74,127,255,0.3);
-    }
-    .save-btn {
-      background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.4);
-      color: #d4af37; padding: 7px 16px; border-radius: 8px; cursor: pointer;
-      font-weight: 700; font-size: 12px; font-family: inherit;
-    }
-    .ball {
-      width: 34px; height: 34px; border-radius: 50%; display: flex;
-      align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;
-    }
-    .ball-normal { background: linear-gradient(135deg, #e8f0ff, #c3d4ff); color: #0d1a4a; box-shadow: 0 2px 8px rgba(100,140,255,0.3); }
-    .ball-strong { background: linear-gradient(135deg, #d4af37, #f5e27d); color: #1a1200; box-shadow: 0 2px 8px rgba(212,175,55,0.5); }
-
-    .ticket-row { border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; transition: border 0.2s; }
-    .ticket-row.normal { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
-    .ticket-row.double { background: rgba(255,160,0,0.04); border: 1px solid rgba(255,160,0,0.35); }
-
-    .ticket-label { font-size: 10px; color: #7a8ab0; font-weight: 600; letter-spacing: 1px; }
-    .ticket-inputs { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-    .divider { width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 2px; flex-shrink: 0; }
-
-    .double-badge {
-      padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 11px;
-      font-family: inherit; cursor: pointer; border: none; transition: all 0.2s;
-    }
-    .double-badge.off { background: rgba(255,255,255,0.06); color: #4a5a7a; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); }
-    .double-badge.on  { background: rgba(255,160,0,0.25); color: #ffaa00; box-shadow: 0 0 0 1px rgba(255,160,0,0.5); }
-
-    .scan-btn {
-      padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 11px;
-      font-family: inherit; cursor: pointer; border: none; transition: all 0.2s;
-      background: rgba(100,200,100,0.1); color: #70d070; box-shadow: 0 0 0 1px rgba(100,200,100,0.25);
-    }
-    .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .remove-btn {
-      background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.25);
-      color: #ff7070; border-radius: 6px; width: 22px; height: 22px; cursor: pointer;
-      font-size: 13px; display: flex; align-items: center; justify-content: center; font-family: inherit;
+    :root {
+      --bg: #080d1a;
+      --surface: rgba(255, 255, 255, 0.04);
+      --surface-strong: rgba(255, 255, 255, 0.07);
+      --border: rgba(255, 255, 255, 0.09);
+      --blue: #4a7fff;
+      --blue-soft: #c3d4ff;
+      --muted: #7a8ab0;
+      --gold: #d4af37;
+      --green: #62d58b;
+      --red: #ff7070;
     }
 
-    .draw-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 16px 20px; margin-bottom: 12px; }
-    .match-badge { background: rgba(212,175,55,0.15); color: #d4af37; font-size: 11px; padding: 2px 10px; border-radius: 20px; font-weight: 700; border: 1px solid rgba(212,175,55,0.3); }
-    .match-ticket { margin-top: 8px; background: rgba(100,140,255,0.05); border-radius: 8px; padding: 8px 12px; border: 1px solid rgba(100,140,255,0.15); }
-
-    .info-box  { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(100,140,255,0.05); border: 1px solid rgba(100,140,255,0.1); font-size: 11px; color: #4a5a7a; }
-    .warn-box  { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: rgba(212,175,55,0.05); border: 1px solid rgba(212,175,55,0.12); font-size: 11px; color: #7a6030; }
-    .error-box { margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(255,80,80,0.07); border: 1px solid rgba(255,80,80,0.2); color: #ff8080; font-size: 13px; }
-    .panel     { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 22px; }
-
-    textarea {
-      width: 100%; min-height: 130px; border-radius: 10px; padding: 12px;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(100,140,255,0.2);
-      color: #c3d4ff; font-size: 13px; font-family: monospace; resize: vertical; outline: none;
-      direction: ltr;
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: radial-gradient(circle at 15% 10%, #17244b 0, transparent 32%), linear-gradient(155deg, #080d1a 0%, #0d1530 58%, #070b15 100%);
+      color: #e8eeff;
+      font-family: "Segoe UI", Tahoma, sans-serif;
     }
-    textarea::placeholder { color: #3a4a6a; }
-
-    @keyframes pulse-red { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.4; transform:scale(1.4); } }
-    .live-dot { width:8px; height:8px; border-radius:50%; background:#ff3333; display:inline-block; animation: pulse-red 1.2s ease-in-out infinite; }
-
-    .num-ball-grid {
-      width:38px; height:38px; border-radius:50%; border:none; cursor:pointer;
-      font-weight:700; font-size:12px; font-family:monospace; transition: all 0.15s;
-      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .app { width: min(780px, 100%); min-height: 100vh; margin: 0 auto; padding: 24px 14px 48px; }
+    .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: clamp(92px, 19vw, 124px); height: auto; display: block; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(74,127,255,.22)); }
+    h1 { margin: 0; font-size: 23px; letter-spacing: 0; }
+    .sub { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .status { color: var(--green); font-size: 12px; font-weight: 700; }
+    .tabs { display: flex; gap: 5px; padding: 4px; margin-bottom: 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+    .tab { flex: 1; min-height: 40px; border: 0; border-radius: 6px; background: transparent; color: #56678f; cursor: pointer; font-size: 12px; font-weight: 800; }
+    .tab.active { color: var(--blue-soft); background: rgba(100,140,255,.16); box-shadow: inset 0 0 0 1px rgba(100,140,255,.24); }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .toolbar-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .button { min-height: 38px; padding: 0 14px; border-radius: 7px; border: 1px solid rgba(100,140,255,.35); background: rgba(100,140,255,.14); color: var(--blue-soft); font-size: 12px; font-weight: 800; cursor: pointer; }
+    .button.primary { border: 0; background: linear-gradient(135deg, #4a7fff, #274fc9); color: #fff; box-shadow: 0 7px 18px rgba(74,127,255,.26); }
+    .button.gold { color: #f3d467; border-color: rgba(212,175,55,.35); background: rgba(212,175,55,.11); }
+    .button.danger { color: var(--red); border-color: rgba(255,112,112,.25); background: rgba(255,112,112,.08); }
+    .button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+    .panel, .ticket, .draw-card { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+    .panel { padding: 20px; }
+    .ticket { padding: 14px; margin-bottom: 9px; }
+    .ticket.double { border-color: rgba(255,160,0,.35); background: rgba(255,160,0,.04); }
+    .ticket-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .ticket-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: var(--blue-soft); }
+    .counter { color: var(--muted); font: 700 11px Consolas, monospace; }
+    .double-toggle { border: 1px solid rgba(255,160,0,.25); border-radius: 5px; background: transparent; color: #806739; padding: 3px 9px; cursor: pointer; font-size: 11px; font-weight: 800; }
+    .double-toggle.on { color: #ffb52e; background: rgba(255,160,0,.16); border-color: rgba(255,160,0,.5); }
+    .number-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(34px, 1fr)); gap: 5px; margin-bottom: 12px; direction: rtl; }
+    .ball-button, .ball { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 800 11px Consolas, monospace; }
+    .ball-button { justify-self: center; border: 0; cursor: pointer; background: rgba(255,255,255,.065); color: #64769d; transition: transform .12s, background .12s; }
+    .ball-button.selected { color: #fff; background: linear-gradient(135deg, #4a7fff, #1a40cc); box-shadow: 0 0 12px rgba(74,127,255,.52); transform: scale(1.08); }
+    .ball-button.strong.selected { color: #1a1200; background: linear-gradient(135deg, #d4af37, #f5e27d); box-shadow: 0 0 12px rgba(212,175,55,.5); }
+    .ball-button:disabled { opacity: .22; cursor: not-allowed; }
+    .strong-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; direction: rtl; }
+    .strong-label { color: var(--gold); font-size: 10px; font-weight: 800; margin-left: 4px; direction: rtl; }
+    .section-title { margin: 0 0 5px; color: var(--blue-soft); font-size: 16px; }
+    .section-copy { margin: 0 0 18px; color: var(--muted); font-size: 12px; }
+    .range { display: grid; grid-template-columns: 1fr 1fr auto; gap: 9px; align-items: end; }
+    .field label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 10px; font-weight: 800; }
+    .field input { width: 100%; height: 43px; border-radius: 7px; border: 1px solid rgba(100,140,255,.3); background: rgba(100,140,255,.07); color: var(--blue-soft); padding: 0 11px; direction: ltr; text-align: center; font: 800 15px Consolas, monospace; }
+    .api-settings { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .api-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .api-row input { text-align: left; font-size: 11px; }
+    .message { margin-top: 13px; padding: 11px 13px; border-radius: 7px; font-size: 12px; border: 1px solid rgba(100,140,255,.2); color: var(--blue-soft); background: rgba(100,140,255,.07); }
+    .message.error { color: #ff9b9b; border-color: rgba(255,112,112,.25); background: rgba(255,112,112,.07); }
+    .progress { height: 3px; margin-top: 14px; overflow: hidden; border-radius: 3px; background: rgba(255,255,255,.07); }
+    .progress::after { content: ""; display: block; width: 38%; height: 100%; background: var(--blue); animation: loading 1s ease-in-out infinite alternate; }
+    @keyframes loading { from { transform: translateX(165%); } to { transform: translateX(-165%); } }
+    .summary { margin-bottom: 12px; color: var(--muted); font-size: 12px; }
+    .draw-card { padding: 16px; margin-bottom: 10px; }
+    .draw-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .draw-number { font-size: 13px; font-weight: 900; color: var(--blue-soft); }
+    .source { color: var(--muted); font-size: 10px; text-decoration: none; }
+    .winning-balls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; direction: rtl; }
+    .ball { color: #10204e; background: linear-gradient(135deg, #edf3ff, #bcd0ff); box-shadow: 0 3px 9px rgba(100,140,255,.25); }
+    .ball.strong { color: #1a1200; background: linear-gradient(135deg, #d4af37, #f5e27d); }
+    .separator { width: 1px; height: 24px; background: var(--border); }
+    .matches { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .match { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(100,140,255,.055); margin-top: 6px; font-size: 12px; }
+    .win { color: var(--green); font-weight: 900; }
+    .no-win { color: #56678f; font-size: 12px; }
+    .empty { text-align: center; padding: 52px 18px; color: var(--muted); }
+    .hidden-input { display: none; }
+    @media (max-width: 560px) {
+      .app { padding-top: 16px; }
+      .header { align-items: flex-start; }
+      .status { display: none; }
+      .range { grid-template-columns: 1fr 1fr; }
+      .range .button { grid-column: 1 / -1; }
+      .panel { padding: 15px; }
+      .api-row { grid-template-columns: 1fr; }
+      .tab { font-size: 11px; }
     }
-    .num-ball-grid.off { background:rgba(255,255,255,0.06); color:#4a5a7a; }
-    .num-ball-grid.on  { background:linear-gradient(135deg,#4a7fff,#1a40cc); color:white; box-shadow:0 0 14px rgba(74,127,255,0.7); transform:scale(1.12); }
-    .num-ball-grid.strong-off { background:rgba(255,255,255,0.06); color:#4a5a7a; }
-    .num-ball-grid.strong-on  { background:linear-gradient(135deg,#d4af37,#f5e27d); color:#1a1200; box-shadow:0 0 14px rgba(212,175,55,0.7); transform:scale(1.12); }
-
-    .live-ticket {
-      border-radius:12px; padding:12px 14px; margin-bottom:8px; transition: all 0.25s;
-    }
-    .live-ticket.none   { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); }
-    .live-ticket.low    { background:rgba(100,140,255,0.04); border:1px solid rgba(100,140,255,0.2); }
-    .live-ticket.medium { background:rgba(74,200,100,0.05); border:1px solid rgba(74,200,100,0.3); }
-    .live-ticket.high   { background:rgba(74,127,255,0.08); border:1px solid rgba(74,127,255,0.5); box-shadow:0 0 16px rgba(74,127,255,0.15); }
-    .live-ticket.jackpot{ background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.6); box-shadow:0 0 20px rgba(212,175,55,0.2); }
-
-    @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.35)} 100%{transform:scale(1)} }
-    .ball-hit { animation: pop 0.3s ease-out; }
   </style>
 </head>
 <body>
-<div id="root"></div>
+  <div id="root"></div>
 
-<script type="text/babel">
-  const { useState, useEffect, useCallback, useRef } = React;
+  <script type="text/babel">
+    const { useEffect, useRef, useState } = React;
+    const TICKETS_KEY = "lotto_checker_tickets_v2";
+    const API_KEY = "lotto_checker_api_url_v1";
+    const MAX_RANGE = 50;
 
-  /* ─────────────── helpers ─────────────── */
-  function makeBlank() {
-    return { numbers: ["","","","","",""], strong: "", double: false };
-  }
-
-  // Parse pasted lottery result text — tries multiple strategies
-  function parsePastedResults(raw) {
-    const results = [];
-
-    // ── Strategy 1: real pais.co.il format — 6 plain numbers on separate lines ──
-    // פריט X, מספר הגרלה\n3952\n...\nהמספר החזק:\n4\nהמספרים שעלו בגורל:\n1\n9\n13\n20\n23\n35\n
-    const plainRe = /(?:פריט\s+\d+,\s+)?מספר\s+הגרלה\s*\n\s*(\d{3,5})\n[\s\S]{0,300}?המספר\s+החזק:\s*\n\s*(\d)\s*\nהמספרים\s+שעלו\s+בגורל:\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)/g;
-    for (const m of raw.matchAll(plainRe)) {
-      const nums = [m[3],m[4],m[5],m[6],m[7],m[8]].map(n => n.padStart(2,"0"));
-      results.push({ draw_number: parseInt(m[1]), numbers: nums, strong: m[2] });
+    function blankTicket() {
+      return { numbers: [], strong: null, double: false };
     }
-    if (results.length) return results;
 
-    // ── Strategy 2: numbered list format — "   1. 9\n   2. 13\n..." ──
-    const listRe = /(?:פריט\s+\d+,\s+)?מספר\s+הגרלה\s*\n\s*(\d{3,5})\n[\s\S]{0,400}?המספר\s+החזק:\s*\n\s*(\d)\s*\nהמספרים\s+שעלו\s+בגורל:\s*\n((?:\s*\d+\.\s+\d+\s*\n?){6})/g;
-    for (const m of raw.matchAll(listRe)) {
-      const nums = (m[3].match(/\d+\.\s+(\d+)/g) || [])
-        .map(s => s.replace(/\d+\.\s+/,"").trim().padStart(2,"0"));
-      if (nums.length === 6)
-        results.push({ draw_number: parseInt(m[1]), numbers: nums, strong: m[2] });
+    function normalizeTicket(ticket) {
+      const numbers = [...new Set((ticket.numbers || []).map(Number).filter(number => number >= 1 && number <= 37))].slice(0, 6).sort((a, b) => a - b);
+      const strong = Number(ticket.strong);
+      return { numbers, strong: strong >= 1 && strong <= 7 ? strong : null, double: Boolean(ticket.double) };
     }
-    if (results.length) return results;
 
-    // ── Strategy 3: loose Hebrew — any order of חזק + המספרים in one blob ──
-    const heRe = /מספר\s+הגרלה\s*\n\s*(\d{3,5})[\s\S]{0,600}?המספר\s+החזק:\s*\n\s*(\d)[\s\S]{0,400}?המספרים\s+שעלו[^:\n]*:\s*\n((?:\s*\d+\s*\n?){6})/gi;
-    for (const m of raw.matchAll(heRe)) {
-      const nums = (m[3].match(/\d+/g)||[]).slice(0,6).map(n=>n.padStart(2,"0"));
-      if (nums.length===6)
-        results.push({ draw_number: parseInt(m[1]), numbers: nums, strong: m[2] });
+    function Ball({ value, strong = false }) {
+      return <div className={`ball${strong ? " strong" : ""}`}>{String(value).padStart(2, "0")}</div>;
     }
-    if (results.length) return results;
 
-    // ── Strategy 4: plain lines — 7 or 8 numbers per line ──
-    for (const line of raw.split(/\n+/)) {
-      const ns = (line.match(/\d+/g)||[]).map(Number);
-      if (ns.length===7) {
-        const [a,b,c,d,e,f,s]=ns, reg=[a,b,c,d,e,f];
-        if (reg.every(n=>n>=1&&n<=37)&&s>=1&&s<=7)
-          results.push({draw_number:`#${results.length+1}`,numbers:reg.map(n=>n.toString().padStart(2,"0")),strong:s.toString()});
-      } else if (ns.length===8) {
-        const [draw,a,b,c,d,e,f,s]=ns, reg=[a,b,c,d,e,f];
-        if (draw>100&&reg.every(n=>n>=1&&n<=37)&&s>=1&&s<=7)
-          results.push({draw_number:draw,numbers:reg.map(n=>n.toString().padStart(2,"0")),strong:s.toString()});
-      }
-    }
-    if (results.length) return results;
+    function TicketEditor({ ticket, index, total, onChange, onRemove }) {
+      const selected = new Set(ticket.numbers);
+      const toggleNumber = number => {
+        const next = new Set(selected);
+        if (next.has(number)) next.delete(number);
+        else if (next.size < 6) next.add(number);
+        onChange({ ...ticket, numbers: [...next].sort((a, b) => a - b) });
+      };
 
-    // ── Strategy 5: last resort — scrape 6 valid numbers + strong from full text ──
-    const all=(raw.match(/\b\d{1,2}\b/g)||[]).map(Number);
-    const reg=[...new Set(all.filter(n=>n>=1&&n<=37))].slice(0,6);
-    const s=all.find(n=>n>=1&&n<=7);
-    if (reg.length===6&&s)
-      results.push({draw_number:"manual",numbers:reg.map(n=>n.toString().padStart(2,"0")),strong:s.toString()});
-
-    return results;
-  }
-
-  /* ─────────────── Ball ─────────────── */
-  function Ball({ value, type }) {
-    return (
-      <div className={`ball ${type==="strong"?"ball-strong":"ball-normal"}`}>
-        {String(value).padStart(2,"0")}
-      </div>
-    );
-  }
-
-  /* ─────────────── TicketEditor ─────────────── */
-  function TicketEditor({ index, ticket, onChange, onRemove, total, onScan, scanning }) {
-    const fileRef  = useRef();
-    const [collapsed, setCollapsed] = useState(false);
-
-    const selectedNums = new Set(ticket.numbers.filter(n=>n!=="").map(n=>parseInt(n)));
-    const strongNum    = ticket.strong ? parseInt(ticket.strong) : null;
-    const isFull       = selectedNums.size === 6 && strongNum !== null;
-
-    // Auto-collapse once ticket is complete
-    useEffect(() => {
-      if (isFull) setCollapsed(true);
-    }, [isFull]);
-
-    const toggleNum = n => {
-      const sel = new Set(selectedNums);
-      if (sel.has(n)) { sel.delete(n); }
-      else if (sel.size < 6) { sel.add(n); }
-      else { return; }
-      const nums = [...sel].sort((a,b)=>a-b).map(x=>x.toString().padStart(2,"0"));
-      while (nums.length < 6) nums.push("");
-      onChange({...ticket, numbers: nums});
-    };
-
-    const toggleStrong = n =>
-      onChange({...ticket, strong: strongNum===n ? "" : n.toString()});
-
-    // Deselect from collapsed view → also expand
-    const deselect = n => {
-      toggleNum(n);
-      setCollapsed(false);
-    };
-    const deselectStrong = () => {
-      onChange({...ticket, strong: ""});
-      setCollapsed(false);
-    };
-
-    const handleFile = e => {
-      if (e.target.files[0]) onScan(e.target.files[0], index);
-      e.target.value = "";
-    };
-
-    // ── Collapsed view ──
-    if (collapsed) {
       return (
-        <div className={`ticket-row ${ticket.double?"double":"normal"}`}
-          style={{paddingBottom:10}}>
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
-            <div style={{display:"flex", alignItems:"center", gap:6}}>
-              <span className="ticket-label">טופס {index+1}</span>
-              {ticket.double && (
-                <span style={{background:"rgba(255,160,0,0.2)", color:"#ffaa00", fontSize:10,
-                  padding:"1px 6px", borderRadius:4, fontWeight:700, border:"1px solid rgba(255,160,0,0.35)"}}>דאבל</span>
-              )}
-              <span style={{fontSize:10, color:"#50c060"}}>✓ מלא</span>
+        <article className={`ticket${ticket.double ? " double" : ""}`}>
+          <div className="ticket-head">
+            <div className="ticket-title">
+              <span>טופס {index + 1}</span>
+              <span className="counter">{selected.size}/6 {ticket.strong ? "★" : ""}</span>
+              <button className={`double-toggle${ticket.double ? " on" : ""}`} onClick={() => onChange({ ...ticket, double: !ticket.double })}>דאבל</button>
             </div>
-            <div style={{display:"flex", gap:6, alignItems:"center"}}>
-              <button onClick={() => setCollapsed(false)} title="ערוך" style={{
-                background:"rgba(100,140,255,0.1)", border:"1px solid rgba(100,140,255,0.25)",
-                color:"#8aabff", borderRadius:6, padding:"2px 9px", cursor:"pointer",
-                fontWeight:700, fontSize:11, fontFamily:"inherit"
-              }}>✏️ ערוך</button>
-              {total>1 && <button className="remove-btn" onClick={onRemove}>×</button>}
-            </div>
+            {total > 1 && <button className="button danger" onClick={onRemove} aria-label={`מחיקת טופס ${index + 1}`}>מחיקה</button>}
           </div>
-          {/* Selected balls — click any to deselect + expand */}
-          <div style={{display:"flex", gap:5, flexWrap:"wrap", alignItems:"center"}}>
-            {[...selectedNums].sort((a,b)=>a-b).map(n => (
-              <button key={n} onClick={() => deselect(n)} title="לחץ לביטול"
-                style={{
-                  width:34, height:34, borderRadius:"50%", border:"none", cursor:"pointer",
-                  fontWeight:700, fontSize:11, fontFamily:"monospace", flexShrink:0,
-                  background:"linear-gradient(135deg,#4a7fff,#1a40cc)", color:"white",
-                  boxShadow:"0 0 8px rgba(74,127,255,0.4)", transition:"transform 0.15s"
-                }}
-                onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
-                onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-                {n.toString().padStart(2,"0")}
+          <div className="number-grid">
+            {Array.from({ length: 37 }, (_, position) => position + 1).map(number => (
+              <button key={number} className={`ball-button${selected.has(number) ? " selected" : ""}`} disabled={!selected.has(number) && selected.size === 6} onClick={() => toggleNumber(number)}>
+                {String(number).padStart(2, "0")}
               </button>
             ))}
-            <div style={{width:1, height:22, background:"rgba(255,255,255,0.1)", margin:"0 2px", flexShrink:0}}/>
-            <button onClick={deselectStrong} title="לחץ לביטול"
-              style={{
-                width:34, height:34, borderRadius:"50%", border:"none", cursor:"pointer",
-                fontWeight:700, fontSize:12, fontFamily:"monospace", flexShrink:0,
-                background:"linear-gradient(135deg,#d4af37,#f5e27d)", color:"#1a1200",
-                boxShadow:"0 0 8px rgba(212,175,55,0.4)", transition:"transform 0.15s"
-              }}
-              onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
-              onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-              {strongNum}
-            </button>
           </div>
-        </div>
+          <div className="strong-row">
+            <span className="strong-label">מספר חזק</span>
+            {Array.from({ length: 7 }, (_, position) => position + 1).map(number => (
+              <button key={number} className={`ball-button strong${ticket.strong === number ? " selected" : ""}`} onClick={() => onChange({ ...ticket, strong: ticket.strong === number ? null : number })}>{number}</button>
+            ))}
+          </div>
+        </article>
       );
     }
 
-    // ── Expanded (editing) view ──
-    return (
-      <div className={`ticket-row ${ticket.double?"double":"normal"}`} style={{paddingBottom:14}}>
-        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10}}>
-          <div style={{display:"flex", alignItems:"center", gap:6, flexWrap:"wrap"}}>
-            <span className="ticket-label">טופס {index+1}</span>
-            <span style={{fontSize:11, fontFamily:"monospace",
-              color: isFull ? "#50c060" : "#4a5a7a"}}>
-              {selectedNums.size}/6{strongNum ? " ★" : ""}
-            </span>
-            <button className={`double-badge ${ticket.double?"on":"off"}`}
-              onClick={() => onChange({...ticket, double: !ticket.double})}>דאבל</button>
-            <button className="scan-btn" disabled={scanning}
-              onClick={() => fileRef.current.click()}>
-              {scanning?"⏳":"📸"} סרוק
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" capture="camera"
-              style={{display:"none"}} onChange={handleFile} />
-          </div>
-          {total>1 && <button className="remove-btn" onClick={onRemove}>×</button>}
-        </div>
-
-        {/* Number grid 1–37 */}
-        <div style={{display:"flex", flexWrap:"wrap", gap:4, marginBottom:10}}>
-          {Array.from({length:37},(_,i)=>i+1).map(n => {
-            const sel      = selectedNums.has(n);
-            const disabled = !sel && selectedNums.size >= 6;
-            return (
-              <button key={n} onClick={() => toggleNum(n)} disabled={disabled}
-                style={{
-                  width:34, height:34, borderRadius:"50%", border:"none",
-                  cursor: disabled ? "not-allowed" : "pointer",
-                  fontWeight:700, fontSize:11, fontFamily:"monospace",
-                  flexShrink:0, transition:"all 0.15s",
-                  background: sel
-                    ? "linear-gradient(135deg,#4a7fff,#1a40cc)"
-                    : disabled ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.06)",
-                  color: sel ? "white" : disabled ? "#2a3a5a" : "#4a5a7a",
-                  boxShadow: sel ? "0 0 10px rgba(74,127,255,0.5)" : "none",
-                  transform: sel ? "scale(1.08)" : "scale(1)"
-                }}>
-                {n.toString().padStart(2,"0")}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Strong grid 1–7 */}
-        <div style={{display:"flex", alignItems:"center", gap:6, flexWrap:"wrap"}}>
-          <span style={{fontSize:9, color:"#d4af37", fontWeight:600, letterSpacing:1, marginLeft:2}}>חזק:</span>
-          {Array.from({length:7},(_,i)=>i+1).map(n => {
-            const sel = strongNum===n;
-            return (
-              <button key={n} onClick={() => toggleStrong(n)}
-                style={{
-                  width:34, height:34, borderRadius:"50%", border:"none", cursor:"pointer",
-                  fontWeight:700, fontSize:12, fontFamily:"monospace",
-                  flexShrink:0, transition:"all 0.15s",
-                  background: sel ? "linear-gradient(135deg,#d4af37,#f5e27d)" : "rgba(255,255,255,0.06)",
-                  color: sel ? "#1a1200" : "#4a5a7a",
-                  boxShadow: sel ? "0 0 10px rgba(212,175,55,0.5)" : "none",
-                  transform: sel ? "scale(1.08)" : "scale(1)"
-                }}>
-                {n}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  /* ─────────────── DrawCard ─────────────── */
-  function DrawCard({ draw, tickets }) {
-    const winners = tickets.map((t,i) => {
-      const matched = t.numbers.filter(n => n && draw.numbers.includes(n));
-      const strongMatch = t.strong && t.strong === draw.strong;
-      return { index:i, matched, strongMatch, double: t.double };
-    }).filter(w => w.matched.length >= 3);
-
-    const label = typeof draw.draw_number === "number"
-      ? `הגרלה #${draw.draw_number}`
-      : draw.draw_number === "manual" ? "✏️ בדיקה ידנית" : `הגרלה ${draw.draw_number}`;
-
-    return (
-      <div className="draw-card">
-        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12}}>
-          <span style={{color:"#7a8ab0", fontSize:11, fontWeight:600, letterSpacing:1}}>{label}</span>
-          {winners.length>0 && <span className="match-badge">{winners.length} התאמות</span>}
-        </div>
-        <div style={{display:"flex", gap:6, flexWrap:"wrap", marginBottom:10}}>
-          {draw.numbers.map((n,i) => <Ball key={i} value={n} type="normal"/>)}
-          <Ball value={draw.strong} type="strong"/>
-        </div>
-        {winners.length===0
-          ? <div style={{color:"#4a5a7a", fontSize:12, fontStyle:"italic"}}>אין טפסים עם 3+ מספרים תואמים (המינימום לזכייה).</div>
-          : winners.map(w => (
-            <div key={w.index} className="match-ticket">
-              <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:6}}>
-                <span style={{color:"#c3d4ff", fontSize:12, fontWeight:600}}>טופס {w.index+1}</span>
-                {w.double && (
-                  <span style={{background:"rgba(255,160,0,0.2)", color:"#ffaa00", fontSize:10,
-                    padding:"1px 7px", borderRadius:4, fontWeight:700, border:"1px solid rgba(255,160,0,0.4)"}}>
-                    דאבל
-                  </span>
-                )}
-                <span style={{color:"#a0b4e8", fontSize:12}}>— {w.matched.length} מספרים</span>
-                {w.strongMatch && <span style={{color:"#d4af37", fontSize:12, fontWeight:700}}>+ חזק ★</span>}
-              </div>
-              <div style={{display:"flex", gap:5, flexWrap:"wrap"}}>
-                {w.matched.map((n,i) => <Ball key={i} value={n} type="normal"/>)}
-                {w.strongMatch && <Ball value={draw.strong} type="strong"/>}
-              </div>
-            </div>
-          ))
-        }
-      </div>
-    );
-  }
-
-  /* ─────────────── LiveDraw ─────────────── */
-  function LiveDraw({ tickets }) {
-    const [drawn,   setDrawn]   = useState([]);   // regular numbers clicked so far
-    const [strong,  setStrong]  = useState(null); // strong number clicked
-    const [lastHit, setLastHit] = useState(null); // for pop animation trigger
-
-    const valid = tickets.filter(t => t.numbers.every(n=>n!=="") && t.strong!=="");
-
-    const toggleNum = n => {
-      setDrawn(p => {
-        if (!p.includes(n) && p.length >= 6) return p; // max 6
-        const next = p.includes(n) ? p.filter(x=>x!==n) : [...p, n];
-        if (!p.includes(n)) setLastHit(n + "-" + Date.now());
-        return next;
+    function DrawCard({ draw, tickets }) {
+      const matches = tickets.map((ticket, index) => {
+        const regular = ticket.numbers.filter(number => draw.numbers.includes(String(number).padStart(2, "0"))).length;
+        const strong = String(ticket.strong) === String(draw.strong);
+        return { index, regular, strong, double: ticket.double };
       });
-    };
-    const toggleStrong = n => {
-      setStrong(p => p===n ? null : n);
-      setLastHit("s" + n + "-" + Date.now());
-    };
-    const reset = () => { setDrawn([]); setStrong(null); setLastHit(null); };
+      const winners = matches.filter(match => match.regular >= 3);
 
-    // Tier per ticket — minimum win requires 3+ regular numbers (strong alone never counts)
-    // none(0-2) / medium(3-4) / high(5) / jackpot(6)
-    const tier = (count, sMatch) => {
-      if (count < 3) return "none"; // 2 regulars + strong is still NOT a win
-      if (count===6 && sMatch) return "jackpot";
-      if (count>=5) return "high";
-      return "medium"; // 3-4 matches
-    };
-
-    return (
-      <div>
-        {/* Header row */}
-        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
-          <div style={{display:"flex", alignItems:"center", gap:8}}>
-            <span className="live-dot"/>
-            <span style={{color:"#ff5555", fontSize:12, fontWeight:700, letterSpacing:1}}>בשידור חי</span>
-            <span style={{color:"#4a5a7a", fontSize:12}}>
-              {drawn.length} מספר{drawn.length!==1?"ים":""} יצא{drawn.length!==1?"ו":""}
-              {strong ? " · חזק ✓" : ""}
-            </span>
+      return (
+        <article className="draw-card">
+          <div className="draw-head">
+            <span className="draw-number">הגרלה #{draw.draw_number}</span>
+            <a className="source" href={draw.source_url} target="_blank" rel="noreferrer">מקור: מפעל הפיס</a>
           </div>
-          <button onClick={reset} style={{
-            background:"rgba(255,80,80,0.1)", border:"1px solid rgba(255,80,80,0.25)",
-            color:"#ff7070", padding:"5px 12px", borderRadius:7, cursor:"pointer",
-            fontWeight:700, fontSize:11, fontFamily:"inherit"
-          }}>↺ אפס</button>
-        </div>
-
-        {/* Drawn numbers strip */}
-        <div style={{
-          minHeight:50, marginBottom:16, padding:"10px 12px", borderRadius:10,
-          background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)",
-          display:"flex", gap:6, flexWrap:"wrap", alignItems:"center"
-        }}>
-          {drawn.length===0 && !strong
-            ? <span style={{color:"#3a4a6a", fontSize:13, fontStyle:"italic"}}>לחץ על מספר כדי להתחיל…</span>
-            : <>
-                {[...drawn].sort((a,b)=>a-b).map(n => (
-                  <div key={n} className="ball ball-normal" style={{cursor:"pointer"}} onClick={()=>toggleNum(n)}
-                    title="לחץ להסרה">
-                    {n.toString().padStart(2,"0")}
-                  </div>
-                ))}
-                {strong && (
-                  <div className="ball ball-strong" style={{cursor:"pointer"}} onClick={()=>toggleStrong(strong)}
-                    title="לחץ להסרה">
-                    {strong.toString().padStart(2,"0")}
-                  </div>
-                )}
-              </>
-          }
-        </div>
-
-        {/* Grid 1-37 */}
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:10, color:"#7a8ab0", fontWeight:600, letterSpacing:1, marginBottom:8}}>
-            מספרים (1–37)
-            {drawn.length >= 6 && <span style={{color:"#ff7070", marginRight:8, fontWeight:700}}> · 6/6 נבחרו</span>}
+          <div className="winning-balls">
+            {draw.numbers.map(number => <Ball key={number} value={number} />)}
+            <span className="separator" />
+            <Ball value={draw.strong} strong />
           </div>
-          <div style={{display:"flex", flexWrap:"wrap", gap:5}}>
-            {Array.from({length:37},(_,i)=>i+1).map(n => {
-              const sel      = drawn.includes(n);
-              const disabled = !sel && drawn.length >= 6;
-              return (
-                <button key={n}
-                  className={`num-ball-grid ${sel?"on":"off"}`}
-                  disabled={disabled}
-                  onClick={()=>toggleNum(n)}
-                  style={{opacity: disabled ? 0.25 : 1, cursor: disabled ? "not-allowed" : "pointer"}}>
-                  {n.toString().padStart(2,"0")}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Strong grid 1-7 */}
-        <div style={{marginBottom:20}}>
-          <div style={{fontSize:10, color:"#d4af37", fontWeight:600, letterSpacing:1, marginBottom:8}}>מספר חזק (1–7)</div>
-          <div style={{display:"flex", gap:5}}>
-            {Array.from({length:7},(_,i)=>i+1).map(n => (
-              <button key={n}
-                className={`num-ball-grid ${strong===n?"strong-on":"strong-off"}`}
-                onClick={()=>toggleStrong(n)}>
-                {n}
-              </button>
+          <div className="matches">
+            {winners.length === 0 ? <div className="no-win">אין טפסים עם 3 מספרים תואמים ומעלה.</div> : winners.map(match => (
+              <div className="match" key={match.index}>
+                <span>טופס {match.index + 1}{match.double ? " · דאבל" : ""}</span>
+                <span className="win">{match.regular}/6{match.strong ? " + חזק ★" : ""}</span>
+              </div>
             ))}
           </div>
-        </div>
+        </article>
+      );
+    }
 
-        {/* Divider */}
-        <div style={{height:1, background:"rgba(255,255,255,0.07)", marginBottom:16}}/>
+    function App() {
+      const [tickets, setTickets] = useState([blankTicket()]);
+      const [tab, setTab] = useState("tickets");
+      const [fromDraw, setFromDraw] = useState(3944);
+      const [toDraw, setToDraw] = useState(3944);
+      const [apiUrl, setApiUrl] = useState("");
+      const [draftApiUrl, setDraftApiUrl] = useState("");
+      const [results, setResults] = useState([]);
+      const [fetchErrors, setFetchErrors] = useState([]);
+      const [message, setMessage] = useState("");
+      const [loading, setLoading] = useState(false);
+      const [saved, setSaved] = useState("");
+      const importRef = useRef(null);
 
-        {/* Tickets */}
-        {valid.length===0
-          ? <div style={{textAlign:"center", padding:"30px 0", color:"#4a5a7a", fontSize:13}}>
-              אין טפסים מלאים — מלא טפסים בטאב "הטפסים שלי"
-            </div>
-          : valid.map((t, i) => {
-              const hits   = t.numbers.filter(n => drawn.includes(parseInt(n)));
-              const sMatch = strong!==null && t.strong===strong.toString();
-              const count  = hits.length;
-              const t_tier = tier(count, sMatch);
-
-              return (
-                <div key={i} className={`live-ticket ${t_tier}`}>
-                  {/* Ticket header */}
-                  <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
-                    <div style={{display:"flex", gap:6, alignItems:"center"}}>
-                      <span style={{fontSize:12, fontWeight:700,
-                        color: t_tier==="jackpot"?"#d4af37": t_tier==="high"?"#c3d4ff": t_tier==="medium"?"#80e090":"#7a8ab0"
-                      }}>טופס {i+1}</span>
-                      {t.double && <span style={{background:"rgba(255,160,0,0.2)", color:"#ffaa00", fontSize:10,
-                        padding:"1px 6px", borderRadius:4, fontWeight:700, border:"1px solid rgba(255,160,0,0.35)"}}>דאבל</span>}
-                      {t_tier==="jackpot" && <span style={{color:"#d4af37", fontSize:12}}>🏆 ג'קפוט!</span>}
-                      {t_tier==="high"    && <span style={{color:"#c3d4ff", fontSize:11}}>🔥 {count}/6</span>}
-                      {t_tier==="medium"  && <span style={{color:"#80e090", fontSize:11}}>{count}/6 — זכייה!</span>}
-                      {t_tier==="none"    && <span style={{color:"#5a6a8a", fontSize:11}}>{count}/6 (צריך 3 לזכייה)</span>}
-                    </div>
-                    {/* Progress dots */}
-                    <div style={{display:"flex", gap:3}}>
-                      {Array.from({length:6},(_,j) => (
-                        <div key={j} style={{
-                          width:7, height:7, borderRadius:"50%", transition:"background 0.2s",
-                          background: j<count
-                            ? (t_tier==="jackpot"?"#d4af37": t_tier==="high"?"#4a7fff":"#50c060")
-                            : "rgba(255,255,255,0.1)"
-                        }}/>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Numbers row */}
-                  <div style={{display:"flex", gap:5, flexWrap:"wrap", alignItems:"center"}}>
-                    {t.numbers.map((n,j) => {
-                      const hit = drawn.includes(parseInt(n));
-                      const isLast = lastHit && lastHit.startsWith(parseInt(n)+"-") && hit;
-                      return (
-                        <div key={j}
-                          className={isLast ? "ball-hit" : ""}
-                          style={{
-                            width:34, height:34, borderRadius:"50%", display:"flex",
-                            alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:13,
-                            flexShrink:0, transition:"all 0.2s",
-                            background: hit
-                              ? "linear-gradient(135deg,#4a7fff,#1a40cc)"
-                              : "rgba(255,255,255,0.05)",
-                            color: hit ? "white" : "#3a4a6a",
-                            boxShadow: hit ? "0 0 12px rgba(74,127,255,0.6)" : "none"
-                          }}>
-                          {n}
-                        </div>
-                      );
-                    })}
-                    <div style={{width:1, height:22, background:"rgba(255,255,255,0.1)", margin:"0 2px", flexShrink:0}}/>
-                    {/* Strong number */}
-                    <div style={{
-                      width:34, height:34, borderRadius:"50%", display:"flex",
-                      alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:13,
-                      flexShrink:0, transition:"all 0.2s",
-                      background: sMatch
-                        ? "linear-gradient(135deg,#d4af37,#f5e27d)"
-                        : "rgba(255,255,255,0.05)",
-                      color: sMatch ? "#1a1200" : "#3a4a6a",
-                      boxShadow: sMatch ? "0 0 12px rgba(212,175,55,0.6)" : "none"
-                    }}>
-                      {t.strong}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-        }
-      </div>
-    );
-  }
-
-  /* ─────────────── App ─────────────── */
-  function App() {
-    const [tickets,    setTickets]    = useState([makeBlank()]);
-    const [tab,        setTab]        = useState("tickets");
-    const [checkMode,  setCheckMode]  = useState("manual");  // "manual" | "paste"
-    const [manualDraw, setManualDraw] = useState({ numbers:["","","","","",""], strong:"" });
-    const [pasteText,  setPasteText]  = useState("");
-    const [results,    setResults]    = useState([]);
-    const [error,      setError]      = useState("");
-    const [saveMsg,    setSaveMsg]    = useState("");
-    const [scanning,   setScanning]   = useState(false);
-    const [scanMsg,    setScanMsg]    = useState("");
-
-    // Load from localStorage
-    useEffect(() => {
-      try {
-        const saved = localStorage.getItem("lotto_tickets");
-        if (saved) {
-          const p = JSON.parse(saved);
-          if (Array.isArray(p) && p.length>0) setTickets(p);
-        }
-      } catch(_) {}
-    }, []);
-
-    const saveTickets = useCallback(() => {
-      try {
-        localStorage.setItem("lotto_tickets", JSON.stringify(tickets));
-        setSaveMsg("נשמר ✓"); setTimeout(()=>setSaveMsg(""), 2000);
-      } catch { setSaveMsg("שגיאה ✗"); }
-    }, [tickets]);
-
-    const addTicket    = () => setTickets(t => [...t, makeBlank()]);
-    const removeTicket = i  => setTickets(t => t.filter((_,idx) => idx!==i));
-
-    const importRef = useRef();
-
-    const exportTickets = () => {
-      const data = JSON.stringify(tickets, null, 2);
-      const blob = new Blob([data], { type: "application/json" });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
-      a.download = `lotto-tickets-${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    };
-
-    const importTickets = e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = evt => {
+      useEffect(() => {
         try {
-          const parsed = JSON.parse(evt.target.result);
-          if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("פורמט לא תקין");
-          // Sanitize each ticket
-          const clean = parsed.map(t => ({
-            numbers: Array.isArray(t.numbers) ? t.numbers.slice(0,6) : ["","","","","",""],
-            strong:  t.strong || "",
-            double:  !!t.double
-          }));
-          setTickets(clean);
-          localStorage.setItem("lotto_tickets", JSON.stringify(clean));
-          setSaveMsg(`יובאו ${clean.length} טפסים ✓`);
-          setTimeout(() => setSaveMsg(""), 3000);
-        } catch(err) {
-          setSaveMsg("שגיאה בייבוא ✗");
-          setTimeout(() => setSaveMsg(""), 3000);
+          const storedTickets = JSON.parse(localStorage.getItem(TICKETS_KEY));
+          if (Array.isArray(storedTickets) && storedTickets.length) setTickets(storedTickets.map(normalizeTicket));
+          const storedApiUrl = localStorage.getItem(API_KEY) || "";
+          setApiUrl(storedApiUrl);
+          setDraftApiUrl(storedApiUrl);
+        } catch (_) {}
+      }, []);
+
+      const validTickets = tickets.filter(ticket => ticket.numbers.length === 6 && ticket.strong);
+      const updateTicket = (index, updated) => setTickets(current => current.map((ticket, position) => position === index ? normalizeTicket(updated) : ticket));
+      const saveTickets = () => {
+        localStorage.setItem(TICKETS_KEY, JSON.stringify(tickets));
+        setSaved("נשמר ✓");
+        setTimeout(() => setSaved(""), 1800);
+      };
+      const saveApiUrl = () => {
+        const clean = draftApiUrl.trim();
+        if (clean && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(clean)) {
+          setMessage("כתובת ה-Web App אינה תקינה. יש להדביק כתובת שמסתיימת ב-/exec.");
+          return;
+        }
+        setApiUrl(clean);
+        localStorage.setItem(API_KEY, clean);
+        setMessage(clean ? "כתובת השירות נשמרה." : "כתובת השירות הוסרה.");
+      };
+      const exportTickets = () => {
+        const blob = new Blob([JSON.stringify(tickets, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `lotto-tickets-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      };
+      const importTickets = event => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            if (!Array.isArray(parsed) || !parsed.length) throw new Error();
+            const imported = parsed.map(normalizeTicket);
+            setTickets(imported);
+            localStorage.setItem(TICKETS_KEY, JSON.stringify(imported));
+            setSaved(`יובאו ${imported.length} טפסים ✓`);
+          } catch (_) {
+            setSaved("קובץ לא תקין");
+          }
+        };
+        reader.readAsText(file);
+        event.target.value = "";
+      };
+
+      const checkRange = async () => {
+        setMessage("");
+        setFetchErrors([]);
+        const first = Number(fromDraw);
+        const last = Number(toDraw);
+        if (!Number.isInteger(first) || !Number.isInteger(last) || first < 1 || last < 1) {
+          setMessage("יש להזין שני מספרי הגרלה תקינים.");
+          return;
+        }
+        if (Math.abs(last - first) + 1 > MAX_RANGE) {
+          setMessage(`ניתן לבדוק עד ${MAX_RANGE} הגרלות בכל פעם.`);
+          return;
+        }
+        if (!apiUrl) {
+          setMessage("יש לשמור תחילה את כתובת ה-Web App של Google Apps Script.");
+          return;
+        }
+        if (!validTickets.length) {
+          setMessage("יש להשלים לפחות טופס אחד לפני הבדיקה.");
+          return;
+        }
+
+        setLoading(true);
+        try {
+          const url = new URL(apiUrl);
+          url.searchParams.set("from", String(Math.min(first, last)));
+          url.searchParams.set("to", String(Math.max(first, last)));
+          const response = await fetch(url.toString(), { redirect: "follow" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const payload = await response.json();
+          if (!payload.ok && !(payload.draws || []).length) throw new Error(payload.error || "לא התקבלו תוצאות.");
+          setResults((payload.draws || []).sort((a, b) => b.draw_number - a.draw_number));
+          setFetchErrors(payload.errors || []);
+          setTab("results");
+        } catch (error) {
+          setMessage(`הבדיקה נכשלה: ${error.message}`);
+        } finally {
+          setLoading(false);
         }
       };
-      reader.readAsText(file);
-      e.target.value = "";
-    };
 
-    const validTickets = tickets.filter(t => t.numbers.every(n=>n!=="") && t.strong!=="");
+      return (
+        <main className="app">
+          <header className="header">
+            <div className="brand">
+              <img className="brand-mark" src="https://www.pais.co.il/images/Lotto-sml_1.png" alt="לוטו - מפעל הפיס" />
+              <div><h1>בודק לוטו</h1><p className="sub">טפסים שמורים ובדיקת טווח הגרלות</p></div>
+            </div>
+            <span className="status">{validTickets.length}/{tickets.length} טפסים מלאים</span>
+          </header>
 
-    /* ── Manual check ── */
-    const checkManual = () => {
-      setError("");
-      const nums = manualDraw.numbers.map(n => n.toString().padStart(2,"0"));
-      if (nums.some(n=>n==="00") || !manualDraw.strong) {
-        setError("יש למלא 6 מספרים ומספר חזק."); return;
-      }
-      setResults([{ draw_number:"manual", numbers:nums, strong:manualDraw.strong }]);
-      setTab("results");
-    };
+          <nav className="tabs" aria-label="ניווט ראשי">
+            <button className={`tab${tab === "tickets" ? " active" : ""}`} onClick={() => setTab("tickets")}>הטפסים שלי</button>
+            <button className={`tab${tab === "check" ? " active" : ""}`} onClick={() => setTab("check")}>בדיקה אוטומטית</button>
+            <button className={`tab${tab === "results" ? " active" : ""}`} onClick={() => setTab("results")}>תוצאות {results.length ? `(${results.length})` : ""}</button>
+          </nav>
 
-    /* ── Paste check ── */
-    const checkPaste = () => {
-      setError("");
-      if (!pasteText.trim()) { setError("יש להדביק תוצאות."); return; }
-      const parsed = parsePastedResults(pasteText);
-      if (!parsed.length) {
-        setError("לא הצלחתי לפרסר את הטקסט. נסה את הפורמט המומלץ."); return;
-      }
-      setResults(parsed);
-      setTab("results");
-    };
-
-    /* ── Tesseract scan ── */
-    const handleScan = useCallback(async (file, ticketIndex) => {
-      setScanning(true);
-      setScanMsg("מעבד תמונה…");
-      try {
-        const worker = await Tesseract.createWorker("eng", 1, {
-          logger: m => { if (m.status==="recognizing text") setScanMsg(`סורק… ${Math.round(m.progress*100)}%`); }
-        });
-        await worker.setParameters({ tessedit_char_whitelist: "0123456789 " });
-        const { data: { text } } = await worker.recognize(file);
-        await worker.terminate();
-
-        // Extract all 1-2 digit numbers
-        const found = (text.match(/\b\d{1,2}\b/g)||[]).map(Number);
-        const regular = [...new Set(found.filter(n=>n>=1&&n<=37))].slice(0,6);
-        const strong  = found.find(n=>n>=1&&n<=7);
-
-        if (regular.length < 1) {
-          setScanMsg("⚠️ לא נמצאו מספרים — נסה תמונה ברורה יותר"); 
-          setTimeout(()=>setScanMsg(""),4000);
-        } else {
-          const nums = [...regular.map(n=>n.toString().padStart(2,"0")), ...Array(6-regular.length).fill("")].slice(0,6);
-          setTickets(prev => {
-            const next = [...prev];
-            next[ticketIndex] = { ...next[ticketIndex], numbers: nums, strong: strong?strong.toString():"" };
-            return next;
-          });
-          setScanMsg(`✓ נמצאו ${regular.length} מספרים — בדוק ותקן אם צריך`);
-          setTimeout(()=>setScanMsg(""),4000);
-        }
-      } catch(e) {
-        setScanMsg("שגיאה בסריקה: "+e.message);
-        setTimeout(()=>setScanMsg(""),5000);
-      }
-      setScanning(false);
-    }, []);
-
-    /* ─── render ─── */
-    const tabDefs = [
-      ["tickets","🎟 הטפסים שלי"],
-      ["check",  "🔍 בדיקה"],
-      ["live",   "🔴 Live"],
-      ["results",`🏆 תוצאות${results.length?` (${results.length})`:""}`]
-    ];
-
-    return (
-      <div style={{minHeight:"100vh", background:"linear-gradient(160deg,#080d1a 0%,#0d1530 60%,#070b15 100%)", direction:"rtl"}}>
-        <div style={{maxWidth:740, margin:"0 auto", padding:"0 14px 40px"}}>
-
-          {/* Header */}
-          <div style={{textAlign:"center", padding:"32px 0 24px"}}>
-            <img src="https://www.pais.co.il/images/Lotto-sml_1.png" alt="לוטו"
-              style={{height:80, objectFit:"contain", marginBottom:14, filter:"drop-shadow(0 4px 16px rgba(212,175,55,0.25))"}}/>
-            <p style={{color:"#4a5a7a", fontSize:13, marginTop:2}}>שמור טפסים · בדוק תוצאות · סרוק מהטלפון</p>
-          </div>
-
-          {/* Tabs */}
-          <div style={{display:"flex", gap:6, marginBottom:20, background:"rgba(255,255,255,0.04)", borderRadius:10, padding:4}}>
-            {tabDefs.map(([key,label]) => (
-              <button key={key} className={`tab-btn${tab===key?" active":""}`} onClick={()=>setTab(key)}>{label}</button>
-            ))}
-          </div>
-
-          {/* ── TICKETS TAB ── */}
-          {tab==="tickets" && (
-            <div>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12}}>
-                <span style={{color:"#7a8ab0", fontSize:12}}>
-                  <span style={{fontFamily:"monospace"}}>{validTickets.length}/{tickets.length}</span> טפסים מלאים
-                </span>
-                <div style={{display:"flex", gap:6, flexWrap:"wrap", justifyContent:"flex-end"}}>
-                  <button className="save-btn" onClick={saveTickets}>{saveMsg||"💾 שמור"}</button>
-                  <button onClick={exportTickets} style={{
-                    background:"rgba(80,200,120,0.12)", border:"1px solid rgba(80,200,120,0.3)",
-                    color:"#60d080", padding:"7px 14px", borderRadius:8, cursor:"pointer",
-                    fontWeight:700, fontSize:12, fontFamily:"inherit"
-                  }}>⬇ ייצא</button>
-                  <button onClick={() => importRef.current.click()} style={{
-                    background:"rgba(200,140,80,0.12)", border:"1px solid rgba(200,140,80,0.3)",
-                    color:"#d09050", padding:"7px 14px", borderRadius:8, cursor:"pointer",
-                    fontWeight:700, fontSize:12, fontFamily:"inherit"
-                  }}>⬆ ייבא</button>
-                  <input ref={importRef} type="file" accept=".json,application/json"
-                    style={{display:"none"}} onChange={importTickets} />
-                  <button onClick={addTicket} style={{
-                    background:"rgba(100,140,255,0.15)", border:"1px solid rgba(100,140,255,0.35)",
-                    color:"#c3d4ff", padding:"7px 14px", borderRadius:8, cursor:"pointer",
-                    fontWeight:700, fontSize:12, fontFamily:"inherit"
-                  }}>+ הוסף טופס</button>
-                </div>
-              </div>
-
-              {scanMsg && (
-                <div style={{marginBottom:10, padding:"8px 14px", borderRadius:8,
-                  background:"rgba(100,200,100,0.08)", border:"1px solid rgba(100,200,100,0.2)",
-                  color:"#80d080", fontSize:12}}>{scanMsg}</div>
-              )}
-
-              {tickets.map((t,i) => (
-                <TicketEditor key={i} index={i} ticket={t} total={tickets.length}
-                  scanning={scanning}
-                  onScan={handleScan}
-                  onRemove={() => removeTicket(i)}
-                  onChange={updated => { const next=[...tickets]; next[i]=updated; setTickets(next); }}
-                />
-              ))}
-
-              <div className="info-box" style={{marginTop:10}}>
-                6 מספרים (1–37) · מספר חזק בשדה הזהוב (1–7) · <b>דאבל</b> = סמן טופס כפול ·
-                <b> 📸 סרוק</b> = צלם טופס פיזי וה-OCR ינסה לחלץ מספרים
+          {tab === "tickets" && <section>
+            <div className="toolbar">
+              <span className="summary">בחר 6 מספרים ומספר חזק לכל טופס</span>
+              <div className="toolbar-actions">
+                <button className="button gold" onClick={saveTickets}>{saved || "שמור"}</button>
+                <button className="button" onClick={exportTickets}>ייצוא</button>
+                <button className="button" onClick={() => importRef.current.click()}>ייבוא</button>
+                <button className="button primary" onClick={() => setTickets(current => [...current, blankTicket()])}>הוסף טופס</button>
+                <input ref={importRef} className="hidden-input" type="file" accept="application/json,.json" onChange={importTickets} />
               </div>
             </div>
-          )}
+            {tickets.map((ticket, index) => <TicketEditor key={index} ticket={ticket} index={index} total={tickets.length} onChange={updated => updateTicket(index, updated)} onRemove={() => setTickets(current => current.filter((_, position) => position !== index))} />)}
+          </section>}
 
-          {/* ── CHECK TAB ── */}
-          {tab==="check" && (
-            <div>
-              {/* Mode toggle */}
-              <div style={{display:"flex", gap:6, marginBottom:16, background:"rgba(255,255,255,0.03)", borderRadius:8, padding:4}}>
-                {[["manual","✏️ הכנסה ידנית"],["paste","📋 הדבק תוצאות"]].map(([key,label]) => (
-                  <button key={key} className={`tab-btn${checkMode===key?" active":""}`}
-                    onClick={()=>{setCheckMode(key); setError("");}}>
-                    {label}
-                  </button>
-                ))}
+          {tab === "check" && <section className="panel">
+            <h2 className="section-title">בדיקת טווח הגרלות</h2>
+            <p className="section-copy">התוצאות נטענות מאתר מפעל הפיס ונבדקות מול כל הטפסים המלאים.</p>
+            <div className="range">
+              <div className="field"><label htmlFor="fromDraw">מהגרלה</label><input id="fromDraw" type="number" min="1" value={fromDraw} onChange={event => setFromDraw(event.target.value)} /></div>
+              <div className="field"><label htmlFor="toDraw">עד הגרלה</label><input id="toDraw" type="number" min="1" value={toDraw} onChange={event => setToDraw(event.target.value)} /></div>
+              <button className="button primary" disabled={loading} onClick={checkRange}>{loading ? "טוען..." : "בדוק הכל"}</button>
+            </div>
+            {loading && <div className="progress" />}
+            <div className="api-settings">
+              <div className="field"><label htmlFor="apiUrl">כתובת Google Apps Script Web App</label></div>
+              <div className="api-row">
+                <div className="field"><input id="apiUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" value={draftApiUrl} onChange={event => setDraftApiUrl(event.target.value)} /></div>
+                <button className="button" onClick={saveApiUrl}>שמור כתובת</button>
               </div>
-
-              {/* Manual mode */}
-              {checkMode==="manual" && (
-                <div className="panel">
-                  <h2 style={{fontSize:15, fontWeight:700, marginBottom:6, color:"#c3d4ff"}}>הכנס מספרים זוכים</h2>
-                  <p style={{color:"#4a5a7a", fontSize:12, marginBottom:16}}>הקלד את תוצאות ההגרלה ובדוק מיידית</p>
-                  <div style={{marginBottom:8}}>
-                    <label style={{display:"block", fontSize:10, color:"#7a8ab0", marginBottom:6, letterSpacing:1, fontWeight:600}}>6 מספרים (1–37)</label>
-                    <div style={{display:"flex", gap:6, flexWrap:"wrap", alignItems:"center"}}>
-                      {manualDraw.numbers.map((n,i) => (
-                        <input key={i} className="num-input" type="number" min="1" max="37"
-                          value={n} placeholder="--"
-                          onChange={e => {
-                            const p=parseInt(e.target.value);
-                            const val=e.target.value===""?"":isNaN(p)?n:Math.min(37,Math.max(1,p)).toString().padStart(2,"0");
-                            const nums=[...manualDraw.numbers]; nums[i]=val;
-                            setManualDraw(d=>({...d, numbers:nums}));
-                          }}/>
-                      ))}
-                      <div className="divider"/>
-                      <div>
-                        <div style={{fontSize:9, color:"#d4af37", marginBottom:3, letterSpacing:1, fontWeight:600}}>חזק ★</div>
-                        <input className="strong-input" type="number" min="1" max="7"
-                          value={manualDraw.strong} placeholder="★"
-                          onChange={e => {
-                            const p=parseInt(e.target.value);
-                            setManualDraw(d=>({...d, strong: e.target.value===""?"":isNaN(p)?d.strong:Math.min(7,Math.max(1,p)).toString()}));
-                          }}/>
-                      </div>
-                    </div>
-                  </div>
-                  <button className="check-btn" onClick={checkManual} style={{marginTop:16}}>
-                    ✅ בדוק את הטפסים שלי
-                  </button>
-                  {error && <div className="error-box">{error}</div>}
-                  <div className="info-box">ללא חיבור לאינטרנט — הבדיקה מתבצעת מיידית.</div>
-                </div>
-              )}
-
-              {/* Paste mode */}
-              {checkMode==="paste" && (
-                <div className="panel">
-                  <h2 style={{fontSize:15, fontWeight:700, marginBottom:6, color:"#c3d4ff"}}>הדבק תוצאות מהאתר</h2>
-                  <p style={{color:"#4a5a7a", fontSize:12, marginBottom:12}}>
-                    העתק את תוצאות ההגרלה מ-pais.co.il והדבק כאן — האתר יפרסר אוטומטית
-                  </p>
-                  <textarea
-                    value={pasteText}
-                    onChange={e=>setPasteText(e.target.value)}
-                    placeholder={`הדבק כאן את הטקסט מעמוד ארכיון פייס.\n\nדוגמה לפורמט:\n\nפריט 1, מספר הגרלה\n3952\nתאריך הגרלה:\n04/08/26\nשעת הגרלה:\n23:15\nהמספר החזק:\n4\nהמספרים שעלו בגורל:\n1\n9\n13\n20\n23\n35\n\nניתן להדביק מספר הגרלות ביחד.`}
-                  />
-                  <button className="check-btn" onClick={checkPaste} style={{marginTop:12}}>
-                    📋 פרסר ובדוק
-                  </button>
-                  {error && <div className="error-box">{error}</div>}
-                  <div className="warn-box">
-                    ניתן להדביק מספר הגרלות בו-זמנית — כל הגרלה תיבדק בנפרד מול כל הטפסים שלך.
-                  </div>
-                </div>
-              )}
             </div>
-          )}
+            {message && <div className={`message${message.includes("נכשלה") || message.includes("תקינה") || message.includes("יש ") ? " error" : ""}`}>{message}</div>}
+          </section>}
 
-          {/* ── LIVE TAB ── */}
-          {tab==="live" && <LiveDraw tickets={validTickets}/>}
+          {tab === "results" && <section>
+            {results.length === 0 ? <div className="empty">אין תוצאות עדיין.</div> : <>
+              <div className="summary">{results.length} הגרלות נבדקו מול {validTickets.length} טפסים מלאים</div>
+              {fetchErrors.length > 0 && <div className="message error">{fetchErrors.length} הגרלות לא נטענו: {fetchErrors.map(item => item.draw_number).join(", ")}</div>}
+              {results.map(draw => <DrawCard key={draw.draw_number} draw={draw} tickets={validTickets} />)}
+            </>}
+          </section>}
+        </main>
+      );
+    }
 
-          {/* ── RESULTS TAB ── */}
-          {tab==="results" && (
-            <div>
-              {results.length===0
-                ? <div style={{textAlign:"center", padding:"50px 20px", color:"#4a5a7a"}}>
-                    <div style={{fontSize:40, marginBottom:12}}>🎱</div>
-                    <div style={{fontSize:15, fontWeight:600, color:"#7a8ab0", marginBottom:6}}>אין תוצאות עדיין</div>
-                    <div style={{fontSize:12}}>עבור לטאב בדיקה כדי להתחיל</div>
-                  </div>
-                : <>
-                    <div style={{color:"#7a8ab0", fontSize:12, marginBottom:14}}>
-                      <span style={{fontFamily:"monospace"}}>{results.length}</span> הגרלות ·
-                      בודק מול <span style={{fontFamily:"monospace"}}>{validTickets.length}</span> טפסים מלאים
-                    </div>
-                    {[...results].sort((a,b) => {
-                      const na = typeof a.draw_number==="number"?a.draw_number:0;
-                      const nb = typeof b.draw_number==="number"?b.draw_number:0;
-                      return nb - na;
-                    }).map((draw,i) => (
-                      <DrawCard key={i} draw={draw} tickets={validTickets}/>
-                    ))}
-                  </>
-              }
-            </div>
-          )}
-
-        </div>
-      </div>
-    );
-  }
-
-  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
-</script>
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
 </body>
 </html>
