@@ -143,55 +143,56 @@
   function parsePastedResults(raw) {
     const results = [];
 
-    // ── Strategy 1: pais.co.il archive format ──
-    // Each draw block looks like:
-    //   מספר הגרלה\n3952\n ... המספר החזק:\n4\nהמספרים שעלו בגורל:\n   1. 1\n   2. 9\n ...
-    const blockRe = /מספר\s+הגרלה\s*\n\s*(\d{3,5})\s*\n[\s\S]{0,400}?המספר\s+החזק:\s*\n\s*(\d)\s*\nהמספרים\s+שעלו\s+בגורל:\s*\n((?:\s*\d+\.\s+\d+\s*\n?){6})/g;
-    for (const m of raw.matchAll(blockRe)) {
-      const drawNum = parseInt(m[1]);
-      const strong  = m[2];
-      const nums    = (m[3].match(/\d+\.\s+(\d+)/g) || [])
-        .map(s => s.replace(/\d+\.\s+/, "").trim().padStart(2,"0"));
-      if (nums.length === 6) {
-        results.push({ draw_number: drawNum, numbers: nums, strong });
-      }
+    // ── Strategy 1: real pais.co.il format — 6 plain numbers on separate lines ──
+    // פריט X, מספר הגרלה\n3952\n...\nהמספר החזק:\n4\nהמספרים שעלו בגורל:\n1\n9\n13\n20\n23\n35\n
+    const plainRe = /(?:פריט\s+\d+,\s+)?מספר\s+הגרלה\s*\n\s*(\d{3,5})\n[\s\S]{0,300}?המספר\s+החזק:\s*\n\s*(\d)\s*\nהמספרים\s+שעלו\s+בגורל:\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)\s*\n\s*(\d+)/g;
+    for (const m of raw.matchAll(plainRe)) {
+      const nums = [m[3],m[4],m[5],m[6],m[7],m[8]].map(n => n.padStart(2,"0"));
+      results.push({ draw_number: parseInt(m[1]), numbers: nums, strong: m[2] });
     }
     if (results.length) return results;
 
-    // ── Strategy 2: looser Hebrew format — any "מספר X ... חזק: Y ... המספרים: a,b,c..." ──
-    const heRe = /מספר\s+(\d{3,5})[\s\S]{0,600}?(?:המספר\s+החזק)[^:\d]*[:\s]*(\d)[\s\S]{0,400}?(?:המספרים\s+שעלו[^:]*|עלו\s+המספרים)[^:\d]*[:\s]+((?:\d{1,2}[\s,.\n]+){5}\d{1,2})/gi;
-    for (const m of raw.matchAll(heRe)) {
-      const nums = (m[3].match(/\d{1,2}/g) || []).map(n => n.padStart(2,"0"));
-      if (nums.length === 6) {
+    // ── Strategy 2: numbered list format — "   1. 9\n   2. 13\n..." ──
+    const listRe = /(?:פריט\s+\d+,\s+)?מספר\s+הגרלה\s*\n\s*(\d{3,5})\n[\s\S]{0,400}?המספר\s+החזק:\s*\n\s*(\d)\s*\nהמספרים\s+שעלו\s+בגורל:\s*\n((?:\s*\d+\.\s+\d+\s*\n?){6})/g;
+    for (const m of raw.matchAll(listRe)) {
+      const nums = (m[3].match(/\d+\.\s+(\d+)/g) || [])
+        .map(s => s.replace(/\d+\.\s+/,"").trim().padStart(2,"0"));
+      if (nums.length === 6)
         results.push({ draw_number: parseInt(m[1]), numbers: nums, strong: m[2] });
-      }
     }
     if (results.length) return results;
 
-    // ── Strategy 3: plain lines — 7 numbers (6 regular + strong) or 8 (draw# + 6 + strong) ──
+    // ── Strategy 3: loose Hebrew — any order of חזק + המספרים in one blob ──
+    const heRe = /מספר\s+הגרלה\s*\n\s*(\d{3,5})[\s\S]{0,600}?המספר\s+החזק:\s*\n\s*(\d)[\s\S]{0,400}?המספרים\s+שעלו[^:\n]*:\s*\n((?:\s*\d+\s*\n?){6})/gi;
+    for (const m of raw.matchAll(heRe)) {
+      const nums = (m[3].match(/\d+/g)||[]).slice(0,6).map(n=>n.padStart(2,"0"));
+      if (nums.length===6)
+        results.push({ draw_number: parseInt(m[1]), numbers: nums, strong: m[2] });
+    }
+    if (results.length) return results;
+
+    // ── Strategy 4: plain lines — 7 or 8 numbers per line ──
     for (const line of raw.split(/\n+/)) {
-      const ns = (line.match(/\d+/g) || []).map(Number);
-      if (ns.length === 7) {
-        const [a,b,c,d,e,f,s] = ns;
-        const reg = [a,b,c,d,e,f];
-        if (reg.every(n => n>=1 && n<=37) && s>=1 && s<=7)
-          results.push({ draw_number: `#${results.length+1}`, numbers: reg.map(n=>n.toString().padStart(2,"0")), strong: s.toString() });
-      } else if (ns.length === 8) {
-        const [draw,a,b,c,d,e,f,s] = ns;
-        const reg = [a,b,c,d,e,f];
-        if (draw>100 && reg.every(n=>n>=1&&n<=37) && s>=1&&s<=7)
-          results.push({ draw_number: draw, numbers: reg.map(n=>n.toString().padStart(2,"0")), strong: s.toString() });
+      const ns = (line.match(/\d+/g)||[]).map(Number);
+      if (ns.length===7) {
+        const [a,b,c,d,e,f,s]=ns, reg=[a,b,c,d,e,f];
+        if (reg.every(n=>n>=1&&n<=37)&&s>=1&&s<=7)
+          results.push({draw_number:`#${results.length+1}`,numbers:reg.map(n=>n.toString().padStart(2,"0")),strong:s.toString()});
+      } else if (ns.length===8) {
+        const [draw,a,b,c,d,e,f,s]=ns, reg=[a,b,c,d,e,f];
+        if (draw>100&&reg.every(n=>n>=1&&n<=37)&&s>=1&&s<=7)
+          results.push({draw_number:draw,numbers:reg.map(n=>n.toString().padStart(2,"0")),strong:s.toString()});
       }
     }
     if (results.length) return results;
 
-    // ── Strategy 4: last resort — scrape 6 valid numbers + a strong from full text ──
-    const all = (raw.match(/\b\d{1,2}\b/g)||[]).map(Number);
-    const reg = [...new Set(all.filter(n=>n>=1&&n<=37))].slice(0,6);
-    const s   = all.find(n=>n>=1&&n<=7);
-    if (reg.length===6 && s) {
-      results.push({ draw_number: "manual", numbers: reg.map(n=>n.toString().padStart(2,"0")), strong: s.toString() });
-    }
+    // ── Strategy 5: last resort — scrape 6 valid numbers + strong from full text ──
+    const all=(raw.match(/\b\d{1,2}\b/g)||[]).map(Number);
+    const reg=[...new Set(all.filter(n=>n>=1&&n<=37))].slice(0,6);
+    const s=all.find(n=>n>=1&&n<=7);
+    if (reg.length===6&&s)
+      results.push({draw_number:"manual",numbers:reg.map(n=>n.toString().padStart(2,"0")),strong:s.toString()});
+
     return results;
   }
 
@@ -893,7 +894,7 @@
                   <textarea
                     value={pasteText}
                     onChange={e=>setPasteText(e.target.value)}
-                    placeholder={`הדבק כאן את הטקסט מעמוד ארכיון פייס, לדוגמה:\n\nמספר הגרלה\n3952\nתאריך הגרלה:\n04/08/26\nשעת הגרלה:\n23:15\nהמספר החזק:\n4\nהמספרים שעלו בגורל:\n   1. 1\n   2. 9\n   3. 13\n   4. 20\n   5. 23\n   6. 35\n\nניתן להדביק מספר הגרלות ביחד — כולן יפורסרו אוטומטית.`}
+                    placeholder={`הדבק כאן את הטקסט מעמוד ארכיון פייס.\n\nדוגמה לפורמט:\n\nפריט 1, מספר הגרלה\n3952\nתאריך הגרלה:\n04/08/26\nשעת הגרלה:\n23:15\nהמספר החזק:\n4\nהמספרים שעלו בגורל:\n1\n9\n13\n20\n23\n35\n\nניתן להדביק מספר הגרלות ביחד.`}
                   />
                   <button className="check-btn" onClick={checkPaste} style={{marginTop:12}}>
                     📋 פרסר ובדוק
