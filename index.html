@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -112,7 +113,7 @@
   <script type="text/babel">
     const { useEffect, useRef, useState } = React;
     const TICKETS_KEY = "lotto_checker_tickets_v2";
-    const API_KEY = "lotto_checker_api_url_v1";
+    const DEFAULT_API_URL = "https://script.google.com/macros/s/AKfycbz4VsyUfvdPJnzcl6gUuVQfIgsYkLyCq7WQjpt9BTzSWWX5ZY_trcD6NnBdsN_Cl_A/exec";
     const MAX_RANGE = 50;
 
     function blankTicket() {
@@ -201,8 +202,6 @@
       const [tab, setTab] = useState("tickets");
       const [fromDraw, setFromDraw] = useState(3944);
       const [toDraw, setToDraw] = useState(3944);
-      const [apiUrl, setApiUrl] = useState("");
-      const [draftApiUrl, setDraftApiUrl] = useState("");
       const [results, setResults] = useState([]);
       const [fetchErrors, setFetchErrors] = useState([]);
       const [message, setMessage] = useState("");
@@ -214,9 +213,6 @@
         try {
           const storedTickets = JSON.parse(localStorage.getItem(TICKETS_KEY));
           if (Array.isArray(storedTickets) && storedTickets.length) setTickets(storedTickets.map(normalizeTicket));
-          const storedApiUrl = localStorage.getItem(API_KEY) || "";
-          setApiUrl(storedApiUrl);
-          setDraftApiUrl(storedApiUrl);
         } catch (_) {}
       }, []);
 
@@ -226,16 +222,6 @@
         localStorage.setItem(TICKETS_KEY, JSON.stringify(tickets));
         setSaved("נשמר ✓");
         setTimeout(() => setSaved(""), 1800);
-      };
-      const saveApiUrl = () => {
-        const clean = draftApiUrl.trim();
-        if (clean && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(clean)) {
-          setMessage("כתובת ה-Web App אינה תקינה. יש להדביק כתובת שמסתיימת ב-/exec.");
-          return;
-        }
-        setApiUrl(clean);
-        localStorage.setItem(API_KEY, clean);
-        setMessage(clean ? "כתובת השירות נשמרה." : "כתובת השירות הוסרה.");
       };
       const exportTickets = () => {
         const blob = new Blob([JSON.stringify(tickets, null, 2)], { type: "application/json" });
@@ -278,10 +264,6 @@
           setMessage(`ניתן לבדוק עד ${MAX_RANGE} הגרלות בכל פעם.`);
           return;
         }
-        if (!apiUrl) {
-          setMessage("יש לשמור תחילה את כתובת ה-Web App של Google Apps Script.");
-          return;
-        }
         if (!validTickets.length) {
           setMessage("יש להשלים לפחות טופס אחד לפני הבדיקה.");
           return;
@@ -289,7 +271,7 @@
 
         setLoading(true);
         try {
-          const url = new URL(apiUrl);
+          const url = new URL(DEFAULT_API_URL);
           url.searchParams.set("from", String(Math.min(first, last)));
           url.searchParams.set("to", String(Math.max(first, last)));
           const response = await fetch(url.toString(), { redirect: "follow" });
@@ -345,13 +327,6 @@
               <button className="button primary" disabled={loading} onClick={checkRange}>{loading ? "טוען..." : "בדוק הכל"}</button>
             </div>
             {loading && <div className="progress" />}
-            <div className="api-settings">
-              <div className="field"><label htmlFor="apiUrl">כתובת Google Apps Script Web App</label></div>
-              <div className="api-row">
-                <div className="field"><input id="apiUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" value={draftApiUrl} onChange={event => setDraftApiUrl(event.target.value)} /></div>
-                <button className="button" onClick={saveApiUrl}>שמור כתובת</button>
-              </div>
-            </div>
             {message && <div className={`message${message.includes("נכשלה") || message.includes("תקינה") || message.includes("יש ") ? " error" : ""}`}>{message}</div>}
           </section>}
 
