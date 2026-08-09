@@ -90,7 +90,9 @@
     .separator { width: 1px; height: 24px; background: var(--border); }
     .matches { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
     .match { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(100,140,255,.055); margin-top: 6px; font-size: 12px; }
+    .match-award { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex-wrap: wrap; }
     .win { color: var(--green); font-weight: 900; }
+    .prize { color: #f3d467; font-weight: 900; }
     .no-win { color: #56678f; font-size: 12px; }
     .empty { text-align: center; padding: 52px 18px; color: var(--muted); }
     .hidden-input { display: none; }
@@ -131,7 +133,14 @@
       const numbers = Array.isArray(draw.numbers) ? draw.numbers.map(number => String(Number(number)).padStart(2, "0")) : [];
       const strong = Number(draw.strong);
       if (!Number.isInteger(drawNumber) || numbers.length !== 6 || numbers.some(number => Number(number) < 1 || Number(number) > 37) || strong < 1 || strong > 7) return null;
-      return { draw_number: drawNumber, numbers, strong: String(strong), source_url: draw.source_url || `https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=${drawNumber}` };
+      const normalizePrizes = table => Object.fromEntries(Object.entries(table || {}).filter(([tier, amount]) => /^[3-6](?:\+strong)?$/.test(tier) && typeof amount === "string"));
+      return {
+        draw_number: drawNumber,
+        numbers,
+        strong: String(strong),
+        prizes: { lotto: normalizePrizes(draw.prizes?.lotto), double: normalizePrizes(draw.prizes?.double) },
+        source_url: draw.source_url || `https://www.pais.co.il/lotto/currentlotto.aspx?lotteryId=${drawNumber}`
+      };
     }
 
     function mergeDrawHistory(...drawGroups) {
@@ -184,7 +193,9 @@
       const matches = tickets.map((ticket, index) => {
         const regular = ticket.numbers.filter(number => draw.numbers.includes(String(number).padStart(2, "0"))).length;
         const strong = String(ticket.strong) === String(draw.strong);
-        return { index, regular, strong, double: ticket.double };
+        const tier = `${regular}${strong ? "+strong" : ""}`;
+        const prizeTable = ticket.double ? draw.prizes?.double : draw.prizes?.lotto;
+        return { index, regular, strong, double: ticket.double, prize: prizeTable?.[tier] || "" };
       });
       const winners = matches.filter(match => match.regular >= 3);
 
@@ -203,7 +214,10 @@
             {winners.length === 0 ? <div className="no-win">אין טפסים עם 3 מספרים תואמים ומעלה.</div> : winners.map(match => (
               <div className="match" key={match.index}>
                 <span>טופס {match.index + 1}{match.double ? " · דאבל" : ""}</span>
-                <span className="win">{match.regular}/6{match.strong ? " + חזק ★" : ""}</span>
+                <span className="match-award">
+                  <span className="win">{match.regular}/6{match.strong ? " + חזק ★" : ""}</span>
+                  {match.prize && <span className="prize">זכייה: {match.prize}</span>}
+                </span>
               </div>
             ))}
           </div>
@@ -232,6 +246,13 @@
           if (Array.isArray(storedHistory)) setHistory(mergeDrawHistory(storedHistory));
         } catch (_) {}
       }, []);
+
+      useEffect(() => {
+        if (!history.length) return;
+        const nextDraw = Math.max(...history.map(draw => draw.draw_number)) + 1;
+        setFromDraw(nextDraw);
+        setToDraw(nextDraw);
+      }, [history]);
 
       const validTickets = tickets.filter(ticket => ticket.numbers.length === 6 && ticket.strong);
       const updateTicket = (index, updated) => setTickets(current => current.map((ticket, position) => position === index ? normalizeTicket(updated) : ticket));
